@@ -7,7 +7,7 @@ Application web de déclaration et de suivi des **paiements à problème** des p
 
 Chaque point de vente déclare ses incidents et suit leur traitement ; le **Back Office** prend en charge, trace ses actions (création de CA, demande de régularisation, clôture…) et pilote les statistiques de tous les points de vente.
 
-Le site est un tableau de bord statique (HTML/CSS/JS, Chart.js, SheetJS), publiable gratuitement sur **GitHub Pages**. Les données partagées sont stockées dans une **feuille Google Sheets** via un petit script **Google Apps Script** fourni.
+Le site est un tableau de bord statique (HTML/CSS/JS, Chart.js, SheetJS, icônes Lucide), publiable gratuitement sur **GitHub Pages**. Son apparence reprend celle de la plateforme **iris** (QFS) : police Public Sans, couleurs du thème Flowbite, barre latérale avec le logo QFS. Les données partagées sont stockées dans une **feuille Google Sheets** via un petit script **Google Apps Script** fourni.
 
 ---
 
@@ -108,7 +108,8 @@ Tout se règle dans [`assets/js/config.js`](assets/js/config.js) :
 
 ```
 index.html              Page unique (connexion + tableau de bord)
-assets/css/style.css    Styles
+assets/css/style.css    Styles (charte iris)
+assets/img/logo-qfs.png Logo QFS
 assets/js/config.js     Configuration (URL de l'API, PDV, opérateurs, listes…)
 assets/js/store.js      Accès aux données (API Google Apps Script)
 assets/js/app.js        Interface : connexion, statistiques, registre, déclaration, suivi

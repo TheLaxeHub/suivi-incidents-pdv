@@ -8,17 +8,18 @@
   const Store = window.Store;
   const BO = C.BACK_OFFICE;
 
+  // Couleurs reprises du thème Flowbite d'iris.
   const STATUTS = {
-    NOUVEAU: { libelle: 'Nouveau', pluriel: 'Nouveaux', badge: 'becp', couleur: '#F57C00' },
-    EN_COURS: { libelle: 'En cours', pluriel: 'En cours', badge: 'benc', couleur: '#1565C0' },
-    TERMINE: { libelle: 'Terminé', pluriel: 'Terminés', badge: 'bter', couleur: '#2E7D32' },
-    REJETE: { libelle: 'Rejeté', pluriel: 'Rejetés', badge: 'bneg', couleur: '#8E24AA' },
+    NOUVEAU: { libelle: 'Nouveau', pluriel: 'Nouveaux', badge: 'becp', couleur: '#ea580c' },
+    EN_COURS: { libelle: 'En cours', pluriel: 'En cours', badge: 'benc', couleur: '#1d4ed8' },
+    TERMINE: { libelle: 'Terminé', pluriel: 'Terminés', badge: 'bter', couleur: '#047857' },
+    REJETE: { libelle: 'Rejeté', pluriel: 'Rejetés', badge: 'bneg', couleur: '#9333ea' },
   };
   const ORDRE_STATUTS = ['NOUVEAU', 'EN_COURS', 'TERMINE', 'REJETE'];
   const NATURES = {
-    DEPOT: { libelle: 'Dépôt', ico: '⬇', couleur: '#1565C0' },
-    RETRAIT: { libelle: 'Retrait', ico: '⬆', couleur: '#29B6F6' },
-    FORMALITE: { libelle: 'Formalité', ico: '📄', couleur: '#F57C00' },
+    DEPOT: { libelle: 'Dépôt', ico: 'arrow-down-to-line', couleur: '#1d4ed8' },
+    RETRAIT: { libelle: 'Retrait', ico: 'arrow-up-from-line', couleur: '#0891b2' },
+    FORMALITE: { libelle: 'Formalité', ico: 'file-text', couleur: '#ea580c' },
   };
   const PAR_PAGE = 100;
   const CLE_SESSION = 'sip_session';
@@ -85,12 +86,18 @@
   };
   const badgeNature = function (i) {
     const n = NATURES[nature(i)];
-    return n ? '<span class="nat-b" style="color:' + n.couleur + '">' + n.ico + ' ' + n.libelle + '</span>' : '—';
+    return n ? '<span class="nat-b" style="color:' + n.couleur + '">' + ico(n.ico) + n.libelle + '</span>' : '—';
   };
   const pastilleOp = function (code) {
     const o = operateur(code);
     return o ? '<span class="op"><span class="op-d" style="background:' + esc(o.couleur) + '"></span>' + esc(o.nom) + '</span>' : '<span class="z">—</span>';
   };
+
+  // Icônes Lucide (comme iris) : on pose <i data-lucide>, puis icones() les transforme en SVG.
+  const ico = function (nom) { return '<i data-lucide="' + nom + '"></i>'; };
+  function icones() {
+    if (window.lucide) window.lucide.createIcons();
+  }
 
   let toastTimer = null;
   function toast(msg, type) {
@@ -115,9 +122,10 @@
 
   function initConnexion() {
     $$('[data-cfg]').forEach(function (el) { el.textContent = C[el.dataset.cfg] || ''; });
-    document.title = C.APP_TITRE + ' — Points de Vente';
+    document.title = C.APP_TITRE + ' — QFS';
     $('#lgConf').hidden = Store.configure;
     dessinerGrille('');
+    icones();
     $('#lgSearch').addEventListener('input', function (e) { dessinerGrille(e.target.value); });
     $('#lgSearch').addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
@@ -151,7 +159,7 @@
     $('#lgStep2').hidden = n !== 2;
     $('#lgErr').textContent = '';
     if (n === 2) {
-      $('#lgWho').textContent = profilChoisi === BO ? '🛡️ Back Office' : '🏪 ' + profilChoisi;
+      $('#lgWho').textContent = profilChoisi === BO ? 'Back Office' : profilChoisi;
       $('#lgCode').value = '';
       setTimeout(function () { $('#lgCode').focus(); }, 50);
     }
@@ -226,15 +234,17 @@
 
   function initApp() {
     const bo = estBO();
-    $('#tbWho').textContent = bo ? '🛡️ BACK OFFICE' : '🏪 ' + S.session.profil;
-    $('#hdrIco').textContent = bo ? '🛡️' : '🏪';
-    $('#hdrSub').textContent = bo
-      ? 'Back Office — Supervision et traitement des incidents des ' + C.POINTS_DE_VENTE.length + ' points de vente'
-      : C.APP_SOUS_TITRE;
-    $('#hdrWho').textContent = bo ? 'Back Office' : 'Point de vente : ' + S.session.profil;
+    $('#sbAv').textContent = bo ? 'BO' : S.session.profil.charAt(0);
+    $('#sbAv').className = 'sb-av' + (bo ? ' bo' : '');
+    $('#sbName').textContent = bo ? 'Back Office' : S.session.profil;
+    $('#sbRole').textContent = bo ? 'Supervision des ' + C.POINTS_DE_VENTE.length + ' PDV' : 'Point de vente';
+    $('#sbReg').textContent = bo ? 'Registre des incidents' : 'Mes déclarations';
+    $('#bcWho').textContent = bo ? 'Back Office' : S.session.profil;
+    $('#pgIco').innerHTML = ico(bo ? 'shield-check' : 'store');
+    $('#pgEyebrow').textContent = bo ? 'E-Money · Back Office' : 'E-Money · Point de vente ' + S.session.profil;
     $('#regTitle').textContent = bo ? 'Registre des incidents — tous les points de vente' : 'Mes déclarations';
-    $('#ftText').innerHTML = esc(C.APP_TITRE) + ' — ' + esc(C.APP_SOUS_TITRE) + '<br>' +
-      'Données partagées entre les points de vente et le Back Office · ' + new Date().getFullYear();
+    $('#ftText').textContent = 'Quipux Financial Services — ' + C.APP_TITRE + ' · ' + new Date().getFullYear();
+    icones();
 
     $('#fPdv').innerHTML = '<option value="">Tous les points de vente</option>' +
       C.POINTS_DE_VENTE.map(function (p) { return '<option>' + esc(p) + '</option>'; }).join('');
@@ -291,6 +301,15 @@
 
     $('#btnNew').addEventListener('click', ouvrirDeclaration);
     $('#btnNew2').addEventListener('click', ouvrirDeclaration);
+    $('#sbNew').addEventListener('click', function () { menu(false); ouvrirDeclaration(); });
+    $('#sbToggle').addEventListener('click', function () { menu(!document.body.classList.contains('sb-open')); });
+    $('#sbOv').addEventListener('click', function () { menu(false); });
+    $('#sbNav').addEventListener('click', function (e) {
+      const a = e.target.closest('a.sb-a');
+      if (!a) return;
+      $$('#sbNav .sb-a').forEach(function (x) { x.classList.toggle('on', x === a); });
+      menu(false);
+    });
     $('#btnRefresh').addEventListener('click', function () { actualiser(); });
     $('#btnXlsx').addEventListener('click', exporterExcel);
     $('#btnPrint').addEventListener('click', function () { window.print(); });
@@ -304,6 +323,11 @@
       else fermerPanneau();
     });
     initDeclaration();
+  }
+
+  // Barre latérale repliable sur tablette et téléphone.
+  function menu(ouvert) {
+    document.body.classList.toggle('sb-open', ouvert);
   }
 
   function synchroniserFiltres() {
@@ -409,9 +433,10 @@
   function rendre() {
     const liste = filtrer();
     const st = stats(liste);
-    $('#hdrMeta').innerHTML = '<span>Période : ' + esc(libellePeriode()) + '</span>' +
-      (S.filtres.pdv ? '<span>Point de vente : ' + esc(S.filtres.pdv) + '</span>' : '') +
-      '<span>Mis à jour à ' + fHeure(S.synchro) + '</span>';
+    $('#pgMeta').textContent = 'Période : ' + libellePeriode() +
+      (S.filtres.pdv ? ' · Point de vente : ' + S.filtres.pdv : '') +
+      ' · Mis à jour à ' + fHeure(S.synchro);
+    $('#shPeriode').textContent = libellePeriode();
     $('#tbSync').textContent = 'Données du ' + fDateHeure(S.synchro);
     rendreProgression(st);
     rendreKpis(st);
@@ -419,6 +444,7 @@
     rendreTable(liste);
     if (estBO()) rendreSynthese(filtrer({ ignorerPdv: true }));
     rendreAlertes(liste);
+    icones();
   }
 
   function rendreProgression(st) {
@@ -437,18 +463,18 @@
   }
 
   function rendreKpis(st) {
-    const k = function (ico, label, val, unite, couleur, petit) {
-      return '<div class="kc" style="--kc:' + couleur + '"><div class="kbi">' + ico + '</div><div class="kl">' + label + '</div>' +
-        '<div class="kv' + (petit ? ' kv-s' : '') + '">' + val + '</div><div class="ku">' + unite + '</div></div>';
+    const k = function (icone, label, val, unite, couleur) {
+      return '<div class="kc" style="--kc:' + couleur + '"><div class="kbi">' + ico(icone) + '</div><p class="kl">' + label + '</p>' +
+        '<p class="kv">' + val + '</p><p class="ku">' + unite + '</p></div>';
     };
     const enRetard = filtrer().filter(function (i) { return i.statut === 'NOUVEAU' && heuresDepuis(i.cree_le) >= C.SEUIL_ALERTE_HEURES; }).length;
     $('#kpis').innerHTML = [
-      k('📋', estBO() ? 'Incidents déclarés' : 'Incidents déclarés par mon PDV', nombre(st.n), 'sur la période', '#1565C0'),
-      k('💰', 'Montant total concerné', nombre(st.montant), 'FCFA — dont ' + nombre(st.montantOuvert) + ' encore ouverts', '#0D47A1', true),
-      k('🆕', 'En attente de prise en charge', nombre(st.NOUVEAU), enRetard ? enRetard + ' depuis plus de ' + C.SEUIL_ALERTE_HEURES + ' h' : 'statut « Nouveau »', '#F57C00'),
-      k('⚙️', 'En cours de traitement', nombre(st.EN_COURS), 'CA, régularisation, relance…', '#0288D1'),
-      k('✅', 'Terminés', nombre(st.TERMINE), st.taux + '% traités (rejetés inclus : ' + st.REJETE + ')', '#2E7D32'),
-      k('⏱️', 'Délai moyen de résolution', duree(st.delaiMoyen), 'de la déclaration à la clôture', '#C62828'),
+      k('clipboard-list', estBO() ? 'Incidents déclarés' : 'Incidents déclarés par mon PDV', nombre(st.n), 'sur la période', '#1d4ed8'),
+      k('wallet', 'Montant total concerné', nombre(st.montant), 'FCFA — dont ' + nombre(st.montantOuvert) + ' encore ouverts', '#111827'),
+      k('inbox', 'En attente de prise en charge', nombre(st.NOUVEAU), enRetard ? enRetard + ' depuis plus de ' + C.SEUIL_ALERTE_HEURES + ' h' : 'statut « Nouveau »', '#ea580c'),
+      k('loader', 'En cours de traitement', nombre(st.EN_COURS), 'CA, régularisation, relance…', '#0891b2'),
+      k('circle-check', 'Terminés', nombre(st.TERMINE), st.taux + '% traités (rejetés inclus : ' + st.REJETE + ')', '#047857'),
+      k('timer', 'Délai moyen de résolution', duree(st.delaiMoyen), 'de la déclaration à la clôture', '#be123c'),
     ].join('');
   }
 
@@ -466,9 +492,11 @@
 
   function rendreGraphiques(liste) {
     if (!window.Chart) return;
-    Chart.defaults.font.family = "'Source Sans Pro', sans-serif";
-    Chart.defaults.color = '#6B7280';
-    const legende = { position: 'bottom', labels: { boxWidth: 12, boxHeight: 12, usePointStyle: true, padding: 14 } };
+    Chart.defaults.font.family = "'Public Sans', ui-sans-serif, system-ui, sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = '#6b7280';
+    Chart.defaults.borderColor = '#f3f4f6';
+    const legende = { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'rectRounded', padding: 14 } };
     const tipFcfa = { callbacks: { label: function (c) { return ' ' + c.label + ' : ' + fcfa(c.raw); } } };
 
     // Par opérateur, empilé par statut
@@ -534,8 +562,8 @@
       data: {
         labels: etiquettes.map(function (k) { const x = k.split('-'); return parMois ? x[1] + '/' + x[0] : x[2] + '/' + x[1]; }),
         datasets: [
-          { label: 'Déclarés', data: compte('cree_le'), borderColor: '#F57C00', backgroundColor: 'rgba(245,124,0,.12)', fill: true, cubicInterpolationMode: 'monotone', pointRadius: 2 },
-          { label: 'Traités (terminés / rejetés)', data: compte('cloture_le', function (i) { return i.statut === 'TERMINE' || i.statut === 'REJETE'; }), borderColor: '#2E7D32', backgroundColor: 'rgba(46,125,50,.08)', fill: true, cubicInterpolationMode: 'monotone', pointRadius: 2 },
+          { label: 'Déclarés', data: compte('cree_le'), borderColor: '#ea580c', backgroundColor: 'rgba(234,88,12,.10)', fill: true, cubicInterpolationMode: 'monotone', pointRadius: 2, borderWidth: 2 },
+          { label: 'Traités (terminés / rejetés)', data: compte('cloture_le', function (i) { return i.statut === 'TERMINE' || i.statut === 'REJETE'; }), borderColor: '#047857', backgroundColor: 'rgba(4,120,87,.08)', fill: true, cubicInterpolationMode: 'monotone', pointRadius: 2, borderWidth: 2 },
         ],
       },
       options: {
@@ -648,7 +676,7 @@
     const z = function (n) { return n ? nombre(n) : '<span class="z">0</span>'; };
     $('#tSynth tbody').innerHTML = lignes.map(function (x) {
       const st = x.st;
-      const couleur = st.taux >= 75 ? '#2E7D32' : st.taux >= 40 ? '#F57C00' : '#C62828';
+      const couleur = st.taux >= 75 ? '#047857' : st.taux >= 40 ? '#ea580c' : '#be123c';
       return '<tr data-pdv="' + esc(x.p) + '" title="Filtrer sur ' + esc(x.p) + '">' +
         '<td><b>' + esc(x.p) + '</b></td>' +
         '<td class="num">' + z(st.n) + '</td>' +
@@ -666,13 +694,13 @@
   function rendreAlertes(liste) {
     const carte = function (i, haut, detail) {
       return '<div class="acard" data-id="' + esc(i.id) + '">' +
-        '<div class="aid2"><span class="ib">' + esc(i.id) + '</span>' + (estBO() ? '<b style="font-size:11.5px">' + esc(i.pdv) + '</b>' : '') + badgeStatut(i.statut) + '</div>' +
+        '<div class="aid2"><span class="ib">' + esc(i.id) + '</span>' + (estBO() ? '<b style="font-size:12px;color:#111827">' + esc(i.pdv) + '</b>' : '') + badgeStatut(i.statut) + '</div>' +
         (haut || '') + '<div class="anm">' + esc(titreIncident(i)) + '</div>' +
         (detail ? '<div class="adet">' + detail + '</div>' : '') + '</div>';
     };
-    const bloc = function (cls, ico, titre, sous, cartes, vide, total) {
-      return '<div class="ac ' + cls + '"><div class="ach"><div class="aic">' + ico + '</div><div><div class="act">' + titre + '</div><div class="acs">' + sous + '</div></div></div>' +
-        (cartes.length ? cartes.join('') : '<div class="aempty">' + vide + '</div>') +
+    const bloc = function (cls, icone, titre, sous, cartes, vide, total) {
+      return '<div class="ac ' + cls + '"><div class="ach"><div class="aic">' + ico(icone) + '</div><div><h3 class="act">' + titre + '</h3><p class="acs">' + sous + '</p></div></div>' +
+        (cartes.length ? cartes.join('') : '<div class="aempty">' + ico('circle-check') + vide + '</div>') +
         (total > cartes.length ? '<div class="amore">… et ' + (total - cartes.length) + ' autre(s) dans le registre</div>' : '') + '</div>';
     };
 
@@ -686,15 +714,15 @@
       .sort(function (a, b) { return String(b.cree_le).localeCompare(String(a.cree_le)); });
 
     $('#alerts').innerHTML = [
-      bloc('crit', '🛑', 'Non pris en charge depuis plus de ' + C.SEUIL_ALERTE_HEURES + ' h',
+      bloc('crit', 'octagon-alert', 'Non pris en charge depuis plus de ' + C.SEUIL_ALERTE_HEURES + ' h',
         retard.length + ' incident(s) toujours au statut « Nouveau »',
         retard.slice(0, 6).map(function (i) { return carte(i, '', 'Déclaré le ' + fDateHeure(i.cree_le) + ' — <span class="adys">' + duree(heuresDepuis(i.cree_le)) + '</span>'); }),
-        'Aucun incident en retard de prise en charge 👍', retard.length),
-      bloc('urg', '💰', 'Montants élevés non résolus',
+        'Aucun incident en retard de prise en charge', retard.length),
+      bloc('urg', 'banknote', 'Montants élevés non résolus',
         'Incidents ouverts ≥ ' + fcfa(C.SEUIL_MONTANT_ELEVE),
         gros.slice(0, 6).map(function (i) { return carte(i, '', '<span class="amt">' + fcfa(i.montant) + '</span> — ' + esc(i.derniere_action)); }),
         'Aucun montant élevé en attente', gros.length),
-      bloc('info', 'ℹ️', estBO() ? 'Dernières actions de suivi' : 'Dernières réponses du Back Office',
+      bloc('info', 'message-square-text', estBO() ? 'Dernières actions de suivi' : 'Dernières réponses du Back Office',
         estBO() ? 'Actions du Back Office et compléments des PDV' : 'Suivi de vos déclarations',
         recentes.slice(0, 6).map(function (a) {
           const i = parId(a.incident_id);
@@ -768,6 +796,7 @@
       '<div class="ps"><div class="pst">Informations déclarées</div><div class="pg">' + champs.join('') + '</div></div>' +
       '<div class="ps"><div class="pst">Ce qui s\'est passé</div><div class="ptx">' + esc(i.description) + '</div></div>' +
       '<div class="ps"><div class="pst">Suivi du traitement</div><div class="tl">' + tl.join('') + '</div></div>';
+    icones();
   }
 
   function rendreFormulaireAction() {
@@ -790,9 +819,10 @@
         '<label class="fl" for="aCom">Message au Back Office *</label><textarea class="in" id="aCom" name="commentaire" rows="3" placeholder="Réponse à une demande du Back Office, nouvelle information…"></textarea>' +
         '<label class="fl" for="aAgent">Nom de l\'agent *</label><input class="in" id="aAgent" name="agent" value="' + esc(agent) + '">';
     }
-    html += '<div class="lg-err" id="aErr"></div><div class="pf-ft"><button class="btn bp" type="submit">Enregistrer</button></div></div>';
+    html += '<div class="lg-err" id="aErr"></div><div class="pf-ft"><button class="btn bp" type="submit">' + ico('check') + 'Enregistrer</button></div></div>';
     $('#pForm').innerHTML = '<form id="fAct" novalidate>' + html + '</form>';
     $('#fAct').addEventListener('submit', soumettreAction);
+    icones();
   }
 
   async function soumettreAction(e) {

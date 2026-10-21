@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Suivi des Incidents de Paiement — Points de Vente</title>
+<title>Suivi des Incidents de Paiement — QFS</title>
 <meta name="description" content="Déclaration et suivi des incidents de paiement (dépôts, retraits Mobile Money, paiements de formalités) des points de vente, avec suivi du Back Office.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D47A1'/%3E%3Crect x='12' y='20' width='40' height='26' rx='4' fill='none' stroke='%23fff' stroke-width='4'/%3E%3Crect x='12' y='26' width='40' height='5' fill='%23fff'/%3E%3Ccircle cx='46' cy='46' r='10' fill='%23F57C00'/%3E%3Cpath d='M46 40v7M46 50v1' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/logo-qfs.png">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=public-sans:400,500,600,700,800" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -16,206 +17,246 @@
 
 <!-- ================= CONNEXION ================= -->
 <section class="lg" id="login" hidden>
-  <div class="lg-card">
+  <div class="lg-halo lg-halo-1"></div>
+  <div class="lg-halo lg-halo-2"></div>
+
+  <div class="lg-wrap">
     <div class="lg-head">
-      <div class="lg-logo">💳</div>
-      <div class="lg-t" data-cfg="APP_TITRE"></div>
-      <div class="lg-s" data-cfg="APP_SOUS_TITRE"></div>
+      <span class="lg-logo"><img src="assets/img/logo-qfs.png" alt="Quipux Financial Services"></span>
+      <h1 class="lg-t" data-cfg="APP_TITRE"></h1>
+      <p class="lg-s" data-cfg="APP_SOUS_TITRE"></p>
     </div>
 
-    <div class="lg-conf" id="lgConf" hidden>
-      <b>Application pas encore reliée à sa base de données.</b>
-      Déployez le script Google Apps Script puis renseignez son URL dans <code>assets/js/config.js</code> (<code>API_URL</code>) — voir le README, section « Mise en service ».
+    <div class="lg-card">
+      <div class="lg-conf" id="lgConf" hidden>
+        <b>Application pas encore reliée à sa base de données.</b>
+        Déployez le script Google Apps Script puis renseignez son URL dans <code>assets/js/config.js</code> (<code>API_URL</code>) — voir le README, section « Mise en service ».
+      </div>
+
+      <div id="lgStep1">
+        <h2 class="lg-q">Qui êtes-vous ?</h2>
+        <p class="lg-h">Sélectionnez votre point de vente, ou le Back Office.</p>
+        <button type="button" class="lg-bo" id="lgBo">
+          <span class="lg-bo-i"><i data-lucide="shield-check"></i></span>
+          <span class="lg-bo-t">Back Office<small>Traitement des incidents et statistiques de tous les points de vente</small></span>
+          <i data-lucide="chevron-right" class="lg-bo-a"></i>
+        </button>
+        <div class="lg-sep"><span>Points de vente</span></div>
+        <div class="sbx lg-sbx"><i data-lucide="search" class="si"></i><input id="lgSearch" type="search" placeholder="Rechercher votre point de vente…" autocomplete="off" aria-label="Rechercher un point de vente"></div>
+        <div class="lg-grid" id="lgGrid"></div>
+      </div>
+
+      <form id="lgStep2" hidden>
+        <button type="button" class="lg-back" id="lgBack"><i data-lucide="arrow-left"></i> Choisir un autre profil</button>
+        <div class="lg-who" id="lgWho"></div>
+        <label class="fl" for="lgCode">Code d'accès</label>
+        <input class="in" id="lgCode" type="password" autocomplete="current-password" required>
+        <button class="btn bp lg-go" type="submit"><i data-lucide="log-in"></i> Se connecter</button>
+      </form>
+
+      <div class="lg-err" id="lgErr" role="alert"></div>
     </div>
-
-    <div id="lgStep1">
-      <h1 class="lg-q">Qui êtes-vous ?</h1>
-      <p class="lg-h">Sélectionnez votre point de vente, ou le Back Office.</p>
-      <button type="button" class="lg-bo" id="lgBo">
-        <span class="lg-bo-i">🛡️</span>
-        <span>Back Office<small>Suivi, traitement des incidents et statistiques de tous les points de vente</small></span>
-        <span class="lg-bo-a">→</span>
-      </button>
-      <div class="lg-sep"><span>Points de vente</span></div>
-      <div class="sbx lg-sbx"><span class="si">🔍</span><input id="lgSearch" type="search" placeholder="Rechercher votre point de vente…" autocomplete="off" aria-label="Rechercher un point de vente"></div>
-      <div class="lg-grid" id="lgGrid"></div>
-    </div>
-
-    <form id="lgStep2" hidden>
-      <button type="button" class="lg-back" id="lgBack">← Choisir un autre profil</button>
-      <div class="lg-who" id="lgWho"></div>
-      <label class="fl" for="lgCode">Code d'accès</label>
-      <input class="in" id="lgCode" type="password" autocomplete="current-password" required>
-      <button class="btn bp lg-go" type="submit">Se connecter</button>
-    </form>
-
-    <div class="lg-err" id="lgErr" role="alert"></div>
   </div>
 </section>
 
 <!-- ================= APPLICATION ================= -->
-<div id="app" hidden>
-  <div class="tb">
-    <span class="tb-w" id="tbWho"></span>
-    <div class="sp"></div>
-    <span class="tfi" id="tbSync"></span>
-    <button class="btn bn pdv-only" id="btnNew">＋ Déclarer un incident</button>
-    <button class="btn bo" id="btnRefresh" title="Actualiser les données">⟳ <span class="hide-sm">Actualiser</span></button>
-    <button class="btn bo" id="btnXlsx" title="Exporter le registre filtré en Excel">⬇ <span class="hide-sm">Excel</span></button>
-    <button class="btn bo" id="btnPrint" title="Imprimer ou enregistrer en PDF">🖨 <span class="hide-sm">PDF</span></button>
-    <button class="btn bx" id="btnLogout" title="Se déconnecter">⏻ Se déconnecter</button>
-  </div>
-
-  <header class="hdr">
-    <div class="h-ico" id="hdrIco"></div>
-    <div class="hc">
-      <div class="ht" data-cfg="APP_TITRE"></div>
-      <div class="hs" id="hdrSub"></div>
-      <div class="hp" id="hdrWho"></div>
-      <div class="hm" id="hdrMeta"></div>
+<div class="shell" id="app" hidden>
+  <aside class="sb" id="sb">
+    <div class="sb-head"><img src="assets/img/logo-qfs.png" alt="Quipux Financial Services"></div>
+    <nav class="sb-nav" id="sbNav">
+      <p class="sb-lbl">Incidents de paiement</p>
+      <a href="#sec-kpi" class="sb-a"><i data-lucide="layout-dashboard"></i>Tableau de bord</a>
+      <a href="#sec-reg" class="sb-a"><i data-lucide="list-checks"></i><span id="sbReg">Registre</span></a>
+      <a href="#sec-synth" class="sb-a bo-only"><i data-lucide="store"></i>Synthèse par PDV</a>
+      <a href="#sec-alertes" class="sb-a"><i data-lucide="bell"></i>Alertes</a>
+      <button type="button" class="sb-a pdv-only" id="sbNew"><i data-lucide="circle-plus"></i>Déclarer un incident</button>
+    </nav>
+    <div class="sb-foot">
+      <div class="sb-user">
+        <span class="sb-av" id="sbAv"></span>
+        <span class="sb-id"><b id="sbName"></b><small id="sbRole"></small></span>
+      </div>
+      <button type="button" class="sb-out" id="btnLogout"><i data-lucide="log-out"></i>Se déconnecter</button>
     </div>
-    <div class="h-ico h-ico-r" aria-hidden="true">📊</div>
-  </header>
+  </aside>
+  <div class="sb-ov" id="sbOv"></div>
 
-  <main class="main">
-    <!-- Filtres -->
-    <div class="flt">
-      <div class="fg">
-        <label for="fPeriode">Période (date de déclaration)</label>
-        <select id="fPeriode">
-          <option value="jour">Aujourd'hui</option>
-          <option value="7j">7 derniers jours</option>
-          <option value="30j" selected>30 derniers jours</option>
-          <option value="mois">Mois en cours</option>
-          <option value="mois_prec">Mois précédent</option>
-          <option value="tout">Toute la période</option>
-          <option value="perso">Personnalisée…</option>
-        </select>
+  <div class="ctn">
+    <header class="top">
+      <button type="button" class="ibtn" id="sbToggle" aria-label="Afficher le menu"><i data-lucide="panel-left"></i></button>
+      <span class="top-sep"></span>
+      <nav class="bc" aria-label="Fil d'Ariane"><span>Incidents de paiement</span><i data-lucide="chevron-right"></i><b id="bcWho"></b></nav>
+      <div class="top-r">
+        <span class="tfi" id="tbSync"></span>
+        <button type="button" class="ibtn" id="btnRefresh" title="Actualiser les données"><i data-lucide="refresh-cw"></i></button>
       </div>
-      <div class="fg" id="fDates" hidden>
-        <label>Du … au</label>
-        <div class="fdates"><input type="date" id="fDu" aria-label="Du"><input type="date" id="fAu" aria-label="Au"></div>
-      </div>
-      <div class="fg bo-only">
-        <label for="fPdv">Point de vente</label>
-        <select id="fPdv"></select>
-      </div>
-      <div class="fg">
-        <label for="fNature">Nature</label>
-        <select id="fNature">
-          <option value="">Toutes</option>
-          <option value="DEPOT">Dépôt</option>
-          <option value="RETRAIT">Retrait</option>
-          <option value="FORMALITE">Paiement de formalité</option>
-        </select>
-      </div>
-      <div class="fg">
-        <label for="fOp">Opérateur</label>
-        <select id="fOp"></select>
-      </div>
-      <button class="btn bo" id="fReset">Réinitialiser</button>
-    </div>
+    </header>
 
-    <!-- Appel à l'action PDV -->
-    <div class="cta pdv-only">
-      <div>
-        <div class="cta-t">Un paiement a posé problème ?</div>
-        <div class="cta-s">Dépôt ou retrait (Orange, Wave, MTN, Moov, Doo, Djamo) ou paiement de formalité : déclarez-le, le Back Office le prend en charge et vous suivez son traitement ici.</div>
-      </div>
-      <button class="btn bn btn-lg" id="btnNew2">＋ Déclarer un incident</button>
-    </div>
-
-    <!-- Progression -->
-    <div class="pc">
-      <div class="pt">
-        <div class="pc-t" id="pcTitle">Taux de traitement des incidents</div>
-        <div class="pc-pct" id="gPct">0%</div>
-      </div>
-      <div class="sw" id="swrap"></div>
-      <div class="sl" id="sLegend"></div>
-      <div class="ps" id="psum"></div>
-    </div>
-
-    <!-- KPI -->
-    <div class="sh"><span class="sh-t">Indicateurs clés</span></div>
-    <div class="kg" id="kpis"></div>
-
-    <!-- Graphiques -->
-    <div class="sh"><span class="sh-t">Analyse graphique</span></div>
-    <div class="cg">
-      <div class="cc"><div class="ct">Incidents par opérateur et par statut</div><div class="ch"><canvas id="cOp"></canvas></div></div>
-      <div class="cc"><div class="ct">Répartition par statut</div><div class="ch"><canvas id="cStatut"></canvas></div></div>
-      <div class="cc"><div class="ct">Évolution des déclarations et des traitements</div><div class="ch"><canvas id="cEvol"></canvas></div></div>
-      <div class="cc"><div class="ct">Montant concerné par nature (FCFA)</div><div class="ch"><canvas id="cNature"></canvas></div></div>
-    </div>
-    <div class="cc bo-only cc-full">
-      <div class="ct">Incidents par point de vente et par statut</div>
-      <div class="ch" id="cPdvWrap"><canvas id="cPdv"></canvas></div>
-    </div>
-
-    <!-- Registre -->
-    <div class="sh"><span class="sh-t" id="regTitle">Registre des incidents</span></div>
-    <div class="tbc">
-      <div class="tcl">
-        <div class="chips" id="chips"></div>
-        <div class="sbx"><span class="si">🔍</span><input type="search" id="srch" placeholder="Rechercher (n°, référence, liquidation, téléphone, agent…)" aria-label="Rechercher dans le registre"></div>
-        <select id="tri" class="in in-sm" aria-label="Trier">
-          <option value="recent">Plus récents d'abord</option>
-          <option value="ancien">Plus anciens d'abord</option>
-          <option value="montant">Montant décroissant</option>
-          <option value="maj">Dernière mise à jour</option>
-        </select>
-        <span class="rc" id="rc"></span>
-      </div>
-      <div class="tw">
-        <table class="tbl">
-          <thead><tr>
-            <th>N°</th><th>Opération</th><th class="bo-only">Point de vente</th><th>Nature</th><th>Opérateur</th>
-            <th>Réf. / N° liquidation</th><th class="num">Montant</th><th>Solution demandée</th>
-            <th>Statut</th><th>Dernière action</th><th>Ancienneté</th>
-          </tr></thead>
-          <tbody id="tbody"></tbody>
-        </table>
-        <div class="nd" id="nd" hidden>Aucun incident ne correspond aux critères sélectionnés.</div>
-        <div class="more" id="more" hidden><button class="btn bo" id="btnMore">Afficher plus</button></div>
-      </div>
-    </div>
-
-    <!-- Synthèse par PDV (Back Office) -->
-    <div class="bo-only">
-      <div class="sh"><span class="sh-t">Synthèse par point de vente</span></div>
-      <div class="tbc">
-        <div class="tw">
-          <table class="tbl" id="tSynth">
-            <thead><tr>
-              <th>Point de vente</th><th class="num">Déclarés</th><th class="num">Montant concerné</th>
-              <th class="num">Nouveaux</th><th class="num">En cours</th><th class="num">Terminés</th><th class="num">Rejetés</th>
-              <th style="min-width:140px">Taux de traitement</th><th>Plus ancien en attente</th>
-            </tr></thead>
-            <tbody></tbody>
-          </table>
+    <main class="main">
+      <!-- En-tête de page -->
+      <header class="pg-h">
+        <div class="pg-hl">
+          <span class="pg-ico" id="pgIco"></span>
+          <div>
+            <p class="eyebrow" id="pgEyebrow"></p>
+            <h1 class="pg-t" data-cfg="APP_TITRE"></h1>
+            <p class="pg-m" id="pgMeta"></p>
+          </div>
         </div>
+        <div class="pg-act">
+          <button type="button" class="btn bo" id="btnXlsx" title="Exporter le registre filtré en Excel"><i data-lucide="file-spreadsheet"></i>Excel</button>
+          <button type="button" class="btn bo" id="btnPrint" title="Imprimer ou enregistrer en PDF"><i data-lucide="printer"></i>PDF</button>
+          <button type="button" class="btn bp pdv-only" id="btnNew"><i data-lucide="plus"></i>Déclarer un incident</button>
+        </div>
+      </header>
+
+      <!-- Filtres -->
+      <div class="card flt">
+        <div class="fg">
+          <label for="fPeriode">Période (date de déclaration)</label>
+          <select id="fPeriode" class="in">
+            <option value="jour">Aujourd'hui</option>
+            <option value="7j">7 derniers jours</option>
+            <option value="30j" selected>30 derniers jours</option>
+            <option value="mois">Mois en cours</option>
+            <option value="mois_prec">Mois précédent</option>
+            <option value="tout">Toute la période</option>
+            <option value="perso">Personnalisée…</option>
+          </select>
+        </div>
+        <div class="fg" id="fDates" hidden>
+          <label>Du … au</label>
+          <div class="fdates"><input type="date" id="fDu" class="in" aria-label="Du"><input type="date" id="fAu" class="in" aria-label="Au"></div>
+        </div>
+        <div class="fg bo-only">
+          <label for="fPdv">Point de vente</label>
+          <select id="fPdv" class="in"></select>
+        </div>
+        <div class="fg">
+          <label for="fNature">Nature</label>
+          <select id="fNature" class="in">
+            <option value="">Toutes</option>
+            <option value="DEPOT">Dépôt</option>
+            <option value="RETRAIT">Retrait</option>
+            <option value="FORMALITE">Paiement de formalité</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label for="fOp">Opérateur</label>
+          <select id="fOp" class="in"></select>
+        </div>
+        <button type="button" class="btn bo" id="fReset"><i data-lucide="rotate-ccw"></i>Réinitialiser</button>
       </div>
-    </div>
 
-    <!-- Alertes -->
-    <div class="sh"><span class="sh-t">Alertes et points d'attention</span></div>
-    <div class="ag" id="alerts"></div>
-  </main>
+      <!-- Appel à l'action PDV -->
+      <div class="cta pdv-only">
+        <span class="cta-i"><i data-lucide="triangle-alert"></i></span>
+        <div class="cta-x">
+          <p class="cta-t">Un paiement a posé problème ?</p>
+          <p class="cta-s">Dépôt ou retrait (Orange, Wave, MTN, Moov, Doo, Djamo) ou paiement de formalité : déclarez-le, le Back Office le prend en charge et vous suivez son traitement ici.</p>
+        </div>
+        <button type="button" class="btn bp" id="btnNew2"><i data-lucide="plus"></i>Déclarer un incident</button>
+      </div>
 
-  <footer class="ft">
-    <div class="fd"></div>
-    <div class="ft-t" id="ftText"></div>
-  </footer>
+      <!-- Indicateurs -->
+      <section id="sec-kpi">
+        <div class="sh"><h2 class="sh-t">Indicateurs clés</h2><span class="sh-r" id="shPeriode"></span></div>
+        <div class="kg" id="kpis"></div>
+      </section>
+
+      <!-- Progression -->
+      <div class="card">
+        <div class="pt">
+          <div>
+            <h2 class="ct">Taux de traitement des incidents</h2>
+            <p class="cs" id="psum"></p>
+          </div>
+          <span class="pc-pct" id="gPct">0%</span>
+        </div>
+        <div class="sw" id="swrap"></div>
+        <div class="sl" id="sLegend"></div>
+      </div>
+
+      <!-- Graphiques -->
+      <section>
+        <div class="sh"><h2 class="sh-t">Analyse graphique</h2></div>
+        <div class="cg">
+          <div class="card"><h3 class="ct">Incidents par opérateur et par statut</h3><p class="cs">Nombre d'incidents déclarés sur la période</p><div class="ch"><canvas id="cOp"></canvas></div></div>
+          <div class="card"><h3 class="ct">Répartition par statut</h3><p class="cs">Où en est le traitement</p><div class="ch"><canvas id="cStatut"></canvas></div></div>
+          <div class="card"><h3 class="ct">Évolution des déclarations et des traitements</h3><p class="cs">Incidents déclarés et clôturés dans le temps</p><div class="ch"><canvas id="cEvol"></canvas></div></div>
+          <div class="card"><h3 class="ct">Montant concerné par nature</h3><p class="cs">En FCFA</p><div class="ch"><canvas id="cNature"></canvas></div></div>
+        </div>
+        <div class="card bo-only cc-full">
+          <h3 class="ct">Incidents par point de vente et par statut</h3><p class="cs">Points de vente ayant déclaré au moins un incident</p>
+          <div class="ch" id="cPdvWrap"><canvas id="cPdv"></canvas></div>
+        </div>
+      </section>
+
+      <!-- Registre -->
+      <section id="sec-reg">
+        <div class="sh"><h2 class="sh-t" id="regTitle">Registre des incidents</h2></div>
+        <div class="card">
+          <div class="tcl">
+            <div class="chips" id="chips"></div>
+            <div class="sbx"><i data-lucide="search" class="si"></i><input type="search" id="srch" placeholder="Rechercher (n°, référence, liquidation, téléphone, agent…)" aria-label="Rechercher dans le registre"></div>
+            <select id="tri" class="in in-sm" aria-label="Trier">
+              <option value="recent">Plus récents d'abord</option>
+              <option value="ancien">Plus anciens d'abord</option>
+              <option value="montant">Montant décroissant</option>
+              <option value="maj">Dernière mise à jour</option>
+            </select>
+            <span class="rc" id="rc"></span>
+          </div>
+          <div class="tw">
+            <table class="tbl">
+              <thead><tr>
+                <th>N°</th><th>Opération</th><th class="bo-only">Point de vente</th><th>Nature</th><th>Opérateur</th>
+                <th>Réf. / N° liquidation</th><th class="num">Montant</th><th>Solution demandée</th>
+                <th>Statut</th><th>Dernière action</th><th>Ancienneté</th>
+              </tr></thead>
+              <tbody id="tbody"></tbody>
+            </table>
+            <div class="nd" id="nd" hidden><i data-lucide="inbox"></i>Aucun incident ne correspond aux critères sélectionnés.</div>
+            <div class="more" id="more" hidden><button type="button" class="btn bo" id="btnMore">Afficher plus</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Synthèse par PDV (Back Office) -->
+      <section class="bo-only" id="sec-synth">
+        <div class="sh"><h2 class="sh-t">Synthèse par point de vente</h2><span class="sh-r">Cliquez sur une ligne pour filtrer</span></div>
+        <div class="card">
+          <div class="tw">
+            <table class="tbl" id="tSynth">
+              <thead><tr>
+                <th>Point de vente</th><th class="num">Déclarés</th><th class="num">Montant concerné</th>
+                <th class="num">Nouveaux</th><th class="num">En cours</th><th class="num">Terminés</th><th class="num">Rejetés</th>
+                <th style="min-width:150px">Taux de traitement</th><th>Plus ancien en attente</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Alertes -->
+      <section id="sec-alertes">
+        <div class="sh"><h2 class="sh-t">Alertes et points d'attention</h2></div>
+        <div class="ag" id="alerts"></div>
+      </section>
+
+      <footer class="ft" id="ftText"></footer>
+    </main>
+  </div>
 </div>
 
 <!-- ================= PANNEAU DÉTAIL ================= -->
 <div class="ov" id="ov"></div>
 <aside class="pnl" id="pnl" aria-hidden="true" aria-labelledby="pTitle">
   <div class="ph">
-    <div class="pid" id="pId"></div>
-    <div class="pnm" id="pTitle"></div>
-    <button class="pcl" id="pClose" aria-label="Fermer">✕</button>
+    <p class="pid" id="pId"></p>
+    <h2 class="pnm" id="pTitle"></h2>
+    <button type="button" class="pcl" id="pClose" aria-label="Fermer"><i data-lucide="x"></i></button>
   </div>
   <div class="pbd">
     <div id="pBody"></div>
@@ -227,23 +268,23 @@
 <div class="mdl" id="mNew" hidden role="dialog" aria-modal="true" aria-labelledby="mNewTitle">
   <form class="mdl-box" id="fNew" novalidate>
     <div class="ph">
-      <div class="pid">Nouvelle déclaration</div>
-      <div class="pnm" id="mNewTitle"></div>
-      <button type="button" class="pcl" data-close aria-label="Fermer">✕</button>
+      <p class="pid">Nouvelle déclaration</p>
+      <h2 class="pnm" id="mNewTitle"></h2>
+      <button type="button" class="pcl" data-close aria-label="Fermer"><i data-lucide="x"></i></button>
     </div>
     <div class="mdl-bd">
       <div class="ps">
-        <div class="pst">1. Quel paiement pose problème ?</div>
+        <h3 class="pst">1. Quel paiement pose problème ?</h3>
         <div class="nat">
-          <label><input type="radio" name="nature" value="DEPOT"><span><b>⬇ Dépôt</b><small>Mobile Money</small></span></label>
-          <label><input type="radio" name="nature" value="RETRAIT"><span><b>⬆ Retrait</b><small>Mobile Money</small></span></label>
-          <label><input type="radio" name="nature" value="FORMALITE"><span><b>📄 Paiement de formalité</b><small>Débit à tort, double débit…</small></span></label>
+          <label><input type="radio" name="nature" value="DEPOT"><span><i data-lucide="arrow-down-to-line"></i><b>Dépôt</b><small>Mobile Money</small></span></label>
+          <label><input type="radio" name="nature" value="RETRAIT"><span><i data-lucide="arrow-up-from-line"></i><b>Retrait</b><small>Mobile Money</small></span></label>
+          <label><input type="radio" name="nature" value="FORMALITE"><span><i data-lucide="file-text"></i><b>Paiement de formalité</b><small>Débit à tort, double débit…</small></span></label>
         </div>
       </div>
 
       <div id="nFields" hidden>
         <div class="ps">
-          <div class="pst">2. Détails de l'opération</div>
+          <h3 class="pst">2. Détails de l'opération</h3>
 
           <div class="only-f fr">
             <div class="fcol"><label class="fl" for="nIncident">Incident survenu *</label><select class="in" id="nIncident" name="incident"></select></div>
@@ -267,7 +308,7 @@
         </div>
 
         <div class="ps">
-          <div class="pst">3. Ce qui s'est passé</div>
+          <h3 class="pst">3. Ce qui s'est passé</h3>
           <label class="fl" for="nDesc">Expliquez ce qui s'est passé *</label>
           <textarea class="in" id="nDesc" name="description" rows="4" placeholder="Ex. : le client a fait un dépôt, notre compte a été débité mais le client n'a pas reçu l'argent…"></textarea>
           <label class="fl" for="nSolution">Solution demandée *</label>
@@ -275,7 +316,7 @@
         </div>
 
         <div class="ps">
-          <div class="pst">4. Déclarant</div>
+          <h3 class="pst">4. Déclarant</h3>
           <label class="fl" for="nAgent">Nom de l'agent *</label>
           <input class="in" id="nAgent" name="declarant" autocomplete="name">
         </div>
@@ -284,7 +325,7 @@
     </div>
     <div class="mdl-ft">
       <button type="button" class="btn bo" data-close>Annuler</button>
-      <button type="submit" class="btn bp" id="nSubmit">Envoyer la déclaration</button>
+      <button type="submit" class="btn bp" id="nSubmit"><i data-lucide="send"></i>Envoyer la déclaration</button>
     </div>
   </form>
 </div>
