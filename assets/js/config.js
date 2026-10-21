@@ -4,7 +4,7 @@
  */
 window.APP_CONFIG = {
   // URL de l'application Web Google Apps Script (voir README, « Mise en service »).
-  // Laissée vide, l'application tourne en MODE DÉMO : les données restent dans le navigateur.
+  // Tant qu'elle est vide, l'écran de connexion indique que l'application n'est pas reliée à sa base.
   API_URL: '',
 
   APP_TITRE: 'Suivi des Incidents de Paiement',

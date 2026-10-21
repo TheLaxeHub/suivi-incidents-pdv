@@ -23,6 +23,11 @@
       <div class="lg-s" data-cfg="APP_SOUS_TITRE"></div>
     </div>
 
+    <div class="lg-conf" id="lgConf" hidden>
+      <b>Application pas encore reliée à sa base de données.</b>
+      Déployez le script Google Apps Script puis renseignez son URL dans <code>assets/js/config.js</code> (<code>API_URL</code>) — voir le README, section « Mise en service ».
+    </div>
+
     <div id="lgStep1">
       <h1 class="lg-q">Qui êtes-vous ?</h1>
       <p class="lg-h">Sélectionnez votre point de vente, ou le Back Office.</p>
@@ -45,7 +50,6 @@
     </form>
 
     <div class="lg-err" id="lgErr" role="alert"></div>
-    <div class="lg-foot" id="lgMode"></div>
   </div>
 </section>
 
@@ -53,14 +57,13 @@
 <div id="app" hidden>
   <div class="tb">
     <span class="tb-w" id="tbWho"></span>
-    <span class="tb-m" id="tbMode"></span>
     <div class="sp"></div>
     <span class="tfi" id="tbSync"></span>
     <button class="btn bn pdv-only" id="btnNew">＋ Déclarer un incident</button>
     <button class="btn bo" id="btnRefresh" title="Actualiser les données">⟳ <span class="hide-sm">Actualiser</span></button>
     <button class="btn bo" id="btnXlsx" title="Exporter le registre filtré en Excel">⬇ <span class="hide-sm">Excel</span></button>
     <button class="btn bo" id="btnPrint" title="Imprimer ou enregistrer en PDF">🖨 <span class="hide-sm">PDF</span></button>
-    <button class="btn bo" id="btnLogout" title="Changer de profil">⇄ <span class="hide-sm">Changer de profil</span></button>
+    <button class="btn bx" id="btnLogout" title="Se déconnecter">⏻ Se déconnecter</button>
   </div>
 
   <header class="hdr">
@@ -73,12 +76,6 @@
     </div>
     <div class="h-ico h-ico-r" aria-hidden="true">📊</div>
   </header>
-
-  <div class="demo" id="demoBanner" hidden>
-    <b>Mode démonstration</b> — les données sont fictives et enregistrées uniquement dans ce navigateur.
-    Branchez la base Google Sheets (voir README) pour partager les données entre les points de vente et le Back Office.
-    <button class="lnk" id="btnResetDemo">Réinitialiser la démo</button>
-  </div>
 
   <main class="main">
     <!-- Filtres -->

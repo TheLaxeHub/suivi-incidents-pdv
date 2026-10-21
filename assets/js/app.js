@@ -116,9 +116,7 @@
   function initConnexion() {
     $$('[data-cfg]').forEach(function (el) { el.textContent = C[el.dataset.cfg] || ''; });
     document.title = C.APP_TITRE + ' — Points de Vente';
-    $('#lgMode').textContent = Store.mode === 'demo'
-      ? 'Mode démonstration — données fictives enregistrées dans ce navigateur'
-      : 'Connecté à la base partagée (Google Sheets)';
+    $('#lgConf').hidden = Store.configure;
     dessinerGrille('');
     $('#lgSearch').addEventListener('input', function (e) { dessinerGrille(e.target.value); });
     $('#lgSearch').addEventListener('keydown', function (e) {
@@ -149,7 +147,7 @@
   }
 
   function etapeConnexion(n) {
-    $('#lgStep1').hidden = n !== 1;
+    $('#lgStep1').hidden = n !== 1 || !Store.configure;
     $('#lgStep2').hidden = n !== 2;
     $('#lgErr').textContent = '';
     if (n === 2) {
@@ -201,15 +199,16 @@
     initApp();
     actualiser();
     clearInterval(S.minuteur);
-    if (Store.mode === 'sheets' && C.ACTUALISATION_SECONDES > 0) {
+    if (C.ACTUALISATION_SECONDES > 0) {
       S.minuteur = setInterval(function () {
         if (!document.hidden && $('#mNew').hidden) actualiser(true);
       }, C.ACTUALISATION_SECONDES * 1000);
     }
   }
 
-  function deconnecter() {
+  function deconnecter(message) {
     clearInterval(S.minuteur);
+    fermerDeclaration();
     memoire.effacer(CLE_SESSION);
     fermerPanneau();
     S.session = null;
@@ -217,6 +216,8 @@
     S.actions = [];
     S.filtres = { periode: '30j', du: '', au: '', pdv: '', nature: '', operateur: '', statut: '', q: '', tri: 'recent' };
     afficherConnexion();
+    window.scrollTo(0, 0);
+    toast(message || 'Vous êtes déconnecté.', message ? 'err' : 'ok');
   }
 
   /* ================= Application ================= */
@@ -226,9 +227,6 @@
   function initApp() {
     const bo = estBO();
     $('#tbWho').textContent = bo ? '🛡️ BACK OFFICE' : '🏪 ' + S.session.profil;
-    $('#tbMode').textContent = Store.mode === 'demo' ? 'Démo' : 'En ligne';
-    $('#tbMode').className = 'tb-m ' + (Store.mode === 'demo' ? 'demo' : 'live');
-    $('#demoBanner').hidden = Store.mode !== 'demo';
     $('#hdrIco').textContent = bo ? '🛡️' : '🏪';
     $('#hdrSub').textContent = bo
       ? 'Back Office — Supervision et traitement des incidents des ' + C.POINTS_DE_VENTE.length + ' points de vente'
@@ -236,7 +234,7 @@
     $('#hdrWho').textContent = bo ? 'Back Office' : 'Point de vente : ' + S.session.profil;
     $('#regTitle').textContent = bo ? 'Registre des incidents — tous les points de vente' : 'Mes déclarations';
     $('#ftText').innerHTML = esc(C.APP_TITRE) + ' — ' + esc(C.APP_SOUS_TITRE) + '<br>' +
-      (Store.mode === 'demo' ? 'Mode démonstration' : 'Données partagées en temps réel (Google Sheets)') + ' · ' + new Date().getFullYear();
+      'Données partagées entre les points de vente et le Back Office · ' + new Date().getFullYear();
 
     $('#fPdv').innerHTML = '<option value="">Tous les points de vente</option>' +
       C.POINTS_DE_VENTE.map(function (p) { return '<option>' + esc(p) + '</option>'; }).join('');
@@ -296,13 +294,7 @@
     $('#btnRefresh').addEventListener('click', function () { actualiser(); });
     $('#btnXlsx').addEventListener('click', exporterExcel);
     $('#btnPrint').addEventListener('click', function () { window.print(); });
-    $('#btnLogout').addEventListener('click', deconnecter);
-    $('#btnResetDemo').addEventListener('click', function () {
-      if (!confirm('Effacer toutes les données de démonstration de ce navigateur et recharger le jeu fictif ?')) return;
-      Store.resetDemo();
-      actualiser();
-      toast('Démo réinitialisée', 'ok');
-    });
+    $('#btnLogout').addEventListener('click', function () { deconnecter(); });
 
     $('#ov').addEventListener('click', fermerPanneau);
     $('#pClose').addEventListener('click', fermerPanneau);
@@ -338,8 +330,7 @@
       if (S.ouvert) rendrePanneau();
     } catch (err) {
       if (err.code === 'CODE_INVALIDE' || err.code === 'CODE_REQUIS' || err.code === 'PROFIL_INCONNU') {
-        toast('Session expirée : ' + err.message, 'err');
-        deconnecter();
+        deconnecter('Session expirée : ' + err.message);
       } else if (!silencieux) {
         toast(err.message, 'err');
       }
@@ -1012,7 +1003,7 @@
 
   initConnexion();
   const enregistree = memoire.lire(CLE_SESSION);
-  if (enregistree && enregistree.profil) {
+  if (Store.configure && enregistree && enregistree.profil) {
     profilChoisi = enregistree.profil;
     connecter(enregistree.profil, enregistree.code || '', true);
   } else {

@@ -14,7 +14,7 @@ Le site est un tableau de bord statique (HTML/CSS/JS, Chart.js, SheetJS), publia
 ## Fonctionnalités
 
 ### Connexion — « Qui êtes-vous ? »
-À l'ouverture, l'utilisateur choisit son profil : l'un des **28 points de vente** (ABOBO, ABOISSO, AGBOVILLE, ANGRE, BONDOUKOU, BONGOUANOU, BOUAKE, BOUNA, BOUNDIALI, COSMOS, DAOUKRO, DIMBOKRO, DIVO, FERKE, FOURRIERE ABOBO, FOURRIERE BASSAM, GUIGLO, KONG, MANKONO, KATIOLA, ODIENNE, PHB, SASSANDRA, SEGUELA, TOUBA, SIEGE, VGE, YOPOUGON) ou le **Back Office**. Un code d'accès peut être exigé par profil (facultatif, voir plus bas). Le profil est mémorisé sur l'appareil jusqu'à « Changer de profil ».
+À l'ouverture, l'utilisateur choisit son profil : l'un des **28 points de vente** (ABOBO, ABOISSO, AGBOVILLE, ANGRE, BONDOUKOU, BONGOUANOU, BOUAKE, BOUNA, BOUNDIALI, COSMOS, DAOUKRO, DIMBOKRO, DIVO, FERKE, FOURRIERE ABOBO, FOURRIERE BASSAM, GUIGLO, KONG, MANKONO, KATIOLA, ODIENNE, PHB, SASSANDRA, SEGUELA, TOUBA, SIEGE, VGE, YOPOUGON) ou le **Back Office**. Un code d'accès peut être exigé par profil (facultatif, voir plus bas). Le profil reste connecté sur l'appareil jusqu'au clic sur **« Se déconnecter »**.
 
 ### Point de vente
 - **Déclarer un incident**
@@ -46,9 +46,9 @@ Le site est un tableau de bord statique (HTML/CSS/JS, Chart.js, SheetJS), publia
 
 ---
 
-## Mode démonstration
+## Avant la mise en service
 
-Tant que `API_URL` est vide dans `assets/js/config.js`, l'application tourne en **mode démo** : un jeu de données fictif est chargé et tout ce qui est saisi reste **uniquement dans le navigateur** (rien n'est partagé). Pratique pour présenter l'outil ; le bouton « Réinitialiser la démo » recharge les données fictives.
+L'application ne contient aucune donnée : tout est enregistré dans la feuille Google Sheets. Tant que `API_URL` est vide dans `assets/js/config.js`, l'écran de connexion affiche « Application pas encore reliée à sa base de données » et personne ne peut se connecter.
 
 ---
 
@@ -73,7 +73,7 @@ Le site est ensuite disponible à l'adresse `https://<compte>.github.io/suivi-in
    ```js
    API_URL: 'https://script.google.com/macros/s/XXXXXXXX/exec',
    ```
-   puis publiez la modification (commit + push). Le bandeau « Mode démonstration » disparaît et le badge passe à « En ligne ».
+   puis publiez la modification (commit + push). La liste « Qui êtes-vous ? » apparaît alors à la connexion.
 
 > Après toute modification de `Code.gs` : **Déployer → Gérer les déploiements → ✏️ → Version : Nouvelle version → Déployer**. L'URL ne change pas.
 
@@ -110,7 +110,7 @@ Tout se règle dans [`assets/js/config.js`](assets/js/config.js) :
 index.html              Page unique (connexion + tableau de bord)
 assets/css/style.css    Styles
 assets/js/config.js     Configuration (URL de l'API, PDV, opérateurs, listes…)
-assets/js/store.js      Accès aux données : API Google Sheets ou mode démo
+assets/js/store.js      Accès aux données (API Google Apps Script)
 assets/js/app.js        Interface : connexion, statistiques, registre, déclaration, suivi
 apps-script/Code.gs     Backend Google Apps Script (à coller dans la feuille Google Sheets)
 ```
@@ -126,5 +126,5 @@ npx serve .
 ## À savoir
 
 - Le site GitHub Pages est public : protégez l'accès aux données avec les **codes d'accès** et ne partagez la feuille Google Sheets qu'avec le Back Office.
-- Le code d'accès est mémorisé sur l'appareil jusqu'à « Changer de profil » ; sur un poste partagé, pensez à changer de profil en partant.
+- Le profil et son code restent mémorisés sur l'appareil jusqu'à « Se déconnecter » ; sur un poste partagé, pensez à vous déconnecter en partant.
 - La feuille Google Sheets reste consultable et exportable directement par le Back Office.
