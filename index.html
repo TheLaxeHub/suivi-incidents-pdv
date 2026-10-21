@@ -148,16 +148,6 @@
         <button type="button" class="btn bo" id="fReset"><i data-lucide="rotate-ccw"></i>Réinitialiser</button>
       </div>
 
-      <!-- Appel à l'action PDV -->
-      <div class="cta pdv-only">
-        <span class="cta-i"><i data-lucide="triangle-alert"></i></span>
-        <div class="cta-x">
-          <p class="cta-t">Un paiement a posé problème ?</p>
-          <p class="cta-s">Dépôt ou retrait (Orange, Wave, MTN, Moov, Doo, Djamo) ou paiement de formalité : déclarez-le, le Back Office le prend en charge et vous suivez son traitement ici.</p>
-        </div>
-        <button type="button" class="btn bp" id="btnNew2"><i data-lucide="plus"></i>Déclarer un incident</button>
-      </div>
-
       <!-- Indicateurs -->
       <section id="sec-kpi">
         <div class="sh"><h2 class="sh-t">Indicateurs clés</h2><span class="sh-r" id="shPeriode"></span></div>
@@ -264,28 +254,32 @@
   </div>
 </aside>
 
-<!-- ================= NOUVELLE DÉCLARATION ================= -->
+<!-- ================= NOUVELLE DÉCLARATION (assistant pas à pas) ================= -->
 <div class="mdl" id="mNew" hidden role="dialog" aria-modal="true" aria-labelledby="mNewTitle">
   <form class="mdl-box" id="fNew" novalidate>
     <div class="ph">
-      <p class="pid">Nouvelle déclaration</p>
+      <p class="pid" id="mNewPdv"></p>
       <h2 class="pnm" id="mNewTitle"></h2>
       <button type="button" class="pcl" data-close aria-label="Fermer"><i data-lucide="x"></i></button>
     </div>
+    <ol class="stp" id="nSteps">
+      <li data-step="1"><span class="stp-n">1</span><span class="stp-l">Type</span></li>
+      <li data-step="2"><span class="stp-n">2</span><span class="stp-l">Opération</span></li>
+      <li data-step="3"><span class="stp-n">3</span><span class="stp-l">Explication</span></li>
+      <li data-step="4"><span class="stp-n">4</span><span class="stp-l">Validation</span></li>
+    </ol>
     <div class="mdl-bd">
-      <div class="ps">
-        <h3 class="pst">1. Quel paiement pose problème ?</h3>
+      <!-- Étape 1 : type de paiement -->
+      <section class="nstep" data-step="1">
         <div class="nat">
           <label><input type="radio" name="nature" value="DEPOT"><span><i data-lucide="arrow-down-to-line"></i><b>Dépôt</b><small>Mobile Money</small></span></label>
           <label><input type="radio" name="nature" value="RETRAIT"><span><i data-lucide="arrow-up-from-line"></i><b>Retrait</b><small>Mobile Money</small></span></label>
           <label><input type="radio" name="nature" value="FORMALITE"><span><i data-lucide="file-text"></i><b>Paiement de formalité</b><small>Débit à tort, double débit…</small></span></label>
         </div>
-      </div>
+      </section>
 
-      <div id="nFields" hidden>
-        <div class="ps">
-          <h3 class="pst">2. Détails de l'opération</h3>
-
+      <!-- Étape 2 : l'opération -->
+      <section class="nstep" data-step="2" hidden>
           <div class="only-f fr">
             <div class="fcol"><label class="fl" for="nIncident">Incident survenu *</label><select class="in" id="nIncident" name="incident"></select></div>
             <div class="fcol"><label class="fl" for="nLiq">N° de liquidation *</label><input class="in" id="nLiq" name="num_liquidation" autocomplete="off"></div>
@@ -305,26 +299,27 @@
             <div class="fcol"><label class="fl" for="nTel">N° de téléphone / compte du client</label><input class="in" id="nTel" name="telephone" inputmode="tel" autocomplete="off"></div>
             <div class="fcol"><label class="fl" for="nRef">Référence / ID de la transaction</label><input class="in" id="nRef" name="reference" autocomplete="off"></div>
           </div>
-        </div>
+      </section>
 
-        <div class="ps">
-          <h3 class="pst">3. Ce qui s'est passé</h3>
-          <label class="fl" for="nDesc">Expliquez ce qui s'est passé *</label>
-          <textarea class="in" id="nDesc" name="description" rows="4" placeholder="Ex. : le client a fait un dépôt, notre compte a été débité mais le client n'a pas reçu l'argent…"></textarea>
-          <label class="fl" for="nSolution">Solution demandée *</label>
-          <select class="in" id="nSolution" name="solution"></select>
-        </div>
+      <!-- Étape 3 : explication et solution demandée -->
+      <section class="nstep" data-step="3" hidden>
+        <label class="fl" for="nDesc">Expliquez ce qui s'est passé *</label>
+        <textarea class="in" id="nDesc" name="description" rows="5" placeholder="Ex. : le client a fait un dépôt, notre compte a été débité mais le client n'a pas reçu l'argent…"></textarea>
+        <label class="fl" for="nSolution">Solution demandée *</label>
+        <select class="in" id="nSolution" name="solution"></select>
+      </section>
 
-        <div class="ps">
-          <h3 class="pst">4. Déclarant</h3>
-          <label class="fl" for="nAgent">Nom de l'agent *</label>
-          <input class="in" id="nAgent" name="declarant" autocomplete="name">
-        </div>
-      </div>
+      <!-- Étape 4 : récapitulatif -->
+      <section class="nstep" data-step="4" hidden>
+        <p class="nstep-h">Vérifiez les informations avant d'envoyer la déclaration au Back Office. Cliquez sur une étape plus haut pour corriger.</p>
+        <div class="pg" id="nRecap"></div>
+      </section>
+
       <div class="lg-err" id="nErr" role="alert"></div>
     </div>
     <div class="mdl-ft">
-      <button type="button" class="btn bo" data-close>Annuler</button>
+      <button type="button" class="btn bo" id="nPrev"></button>
+      <button type="button" class="btn bp" id="nNext">Suivant<i data-lucide="arrow-right"></i></button>
       <button type="submit" class="btn bp" id="nSubmit"><i data-lucide="send"></i>Envoyer la déclaration</button>
     </div>
   </form>

@@ -132,6 +132,7 @@ function creer_(sess, data) {
     inc.id = prochainId_(db.incidents);
     inc.cree_le = now;
     inc.pdv = sess.profil;
+    inc.declarant = inc.declarant || sess.profil;
     inc.statut = 'NOUVEAU';
     inc.derniere_action = 'Déclaration';
     inc.maj_le = now;
@@ -150,7 +151,8 @@ function ajouterAction_(sess, data) {
   if (COMMENTAIRE_OBLIGATOIRE.indexOf(code) >= 0 && !commentaire) {
     throw erreur_('VALIDATION', 'Un commentaire est obligatoire pour cette action.');
   }
-  const agent = texte_(data.agent, 80);
+  // Un point de vente agit en son nom ; seul le Back Office indique l'agent.
+  const agent = texte_(data.agent, 80) || (sess.isBO ? '' : sess.profil);
   if (!agent) throw erreur_('VALIDATION', "Indiquez le nom de l'agent.");
 
   return verrou_(function () {
@@ -222,7 +224,6 @@ function valider_(d) {
   if (!(inc.montant > 0)) throw erreur_('VALIDATION', 'Le montant doit être supérieur à 0.');
   if (!inc.description) throw erreur_('VALIDATION', 'Expliquez ce qui s\'est passé.');
   if (!inc.solution) throw erreur_('VALIDATION', 'Choisissez la solution demandée.');
-  if (!inc.declarant) throw erreur_('VALIDATION', "Indiquez le nom de l'agent déclarant.");
   return inc;
 }
 

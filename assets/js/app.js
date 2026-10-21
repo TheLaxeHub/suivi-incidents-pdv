@@ -80,6 +80,11 @@
     return NATURES[i.type_operation].libelle + ' ' + (op ? op.nom : '') + ' — ' + fcfa(i.montant);
   };
 
+  // Les déclarations se font au nom du point de vente ; les anciennes peuvent porter un nom d'agent.
+  const declarePar = function (i) {
+    return i.declarant && i.declarant !== i.pdv ? i.declarant + ' — ' + i.pdv : i.pdv;
+  };
+
   const badgeStatut = function (s) {
     const d = STATUTS[s] || STATUTS.NOUVEAU;
     return '<span class="badge ' + d.badge + '">' + d.libelle + '</span>';
@@ -300,7 +305,6 @@
     });
 
     $('#btnNew').addEventListener('click', ouvrirDeclaration);
-    $('#btnNew2').addEventListener('click', ouvrirDeclaration);
     $('#sbNew').addEventListener('click', function () { menu(false); ouvrirDeclaration(); });
     $('#sbToggle').addEventListener('click', function () { menu(!document.body.classList.contains('sb-open')); });
     $('#sbOv').addEventListener('click', function () { menu(false); });
@@ -773,16 +777,16 @@
         it('N° client', esc(i.telephone)), it('Référence transaction', esc(i.reference)),
         it('Solution demandée', esc(i.solution), true),
       ];
-    champs.push(it('Déclaré par', esc(i.declarant) + ' — ' + esc(i.pdv)), it('Déclaré le', fDateHeure(i.cree_le)));
+    champs.push(it('Déclaré par', esc(declarePar(i))), it('Déclaré le', fDateHeure(i.cree_le)));
 
     const tl = ['<div class="tli"><div class="tld start"></div><div class="tdt">' + fDateHeure(i.cree_le) + '</div>' +
-      '<div class="tdh">Déclaration de l\'incident</div><div class="tdd">par ' + esc(i.declarant) + ' (' + esc(i.pdv) + ')</div></div>'];
+      '<div class="tdh">Déclaration de l\'incident</div><div class="tdd">par ' + esc(declarePar(i)) + '</div></div>'];
     actionsDe(i.id).forEach(function (a) {
       const cls = a.code === 'TERMINE' ? 'done'
         : a.code === 'REJETE' ? 'blocked'
           : (a.code === 'COMPLEMENT' || a.code === 'COMMENTAIRE') ? 'note' : 'ongoing';
       tl.push('<div class="tli"><div class="tld ' + cls + '"></div><div class="tdt">' + fDateHeure(a.cree_le) + ' — ' +
-        esc(a.auteur === BO ? 'Back Office' : a.auteur) + (a.agent ? ' · ' + esc(a.agent) : '') + '</div>' +
+        esc(a.auteur === BO ? 'Back Office' : a.auteur) + (a.agent && a.agent !== a.auteur ? ' · ' + esc(a.agent) : '') + '</div>' +
         '<div class="tdh">' + esc(a.libelle) + '</div>' +
         (a.reference ? '<span class="tdr">Réf. ' + esc(a.reference) + '</span>' : '') +
         (a.commentaire ? '<div class="tdd">' + esc(a.commentaire) + '</div>' : '') + '</div>');
@@ -816,8 +820,7 @@
     } else {
       html = '<div class="ps"><div class="pst">Ajouter un complément d\'information</div>' +
         '<input type="hidden" name="code" value="COMPLEMENT">' +
-        '<label class="fl" for="aCom">Message au Back Office *</label><textarea class="in" id="aCom" name="commentaire" rows="3" placeholder="Réponse à une demande du Back Office, nouvelle information…"></textarea>' +
-        '<label class="fl" for="aAgent">Nom de l\'agent *</label><input class="in" id="aAgent" name="agent" value="' + esc(agent) + '">';
+        '<label class="fl" for="aCom">Message au Back Office *</label><textarea class="in" id="aCom" name="commentaire" rows="3" placeholder="Réponse à une demande du Back Office, nouvelle information…"></textarea>';
     }
     html += '<div class="lg-err" id="aErr"></div><div class="pf-ft"><button class="btn bp" type="submit">' + ico('check') + 'Enregistrer</button></div></div>';
     $('#pForm').innerHTML = '<form id="fAct" novalidate>' + html + '</form>';
@@ -834,17 +837,19 @@
       code: code,
       reference: f.reference ? f.reference.value.trim() : '',
       commentaire: f.commentaire.value.trim(),
-      agent: f.agent.value.trim(),
+      // Le point de vente agit en son nom ; seul le Back Office indique l'agent.
+      agent: f.agent ? f.agent.value.trim() : S.session.profil,
     };
     const err = $('#aErr');
     err.textContent = '';
     if (!code) { err.textContent = 'Choisissez une action.'; return; }
     if (!data.agent) { err.textContent = "Indiquez le nom de l'agent."; f.agent.focus(); return; }
+    if (!estBO() && !data.commentaire) { err.textContent = 'Écrivez votre message au Back Office.'; f.commentaire.focus(); return; }
     const bouton = f.querySelector('[type=submit]');
     bouton.disabled = true;
     try {
       const r = await Store.addAction(S.session, data);
-      memoire.ecrire(cleAgent(), data.agent);
+      if (estBO()) memoire.ecrire(cleAgent(), data.agent);
       const k = S.incidents.findIndex(function (x) { return x.id === r.incident.id; });
       if (k >= 0) S.incidents[k] = r.incident;
       S.actions.push(r.action);
@@ -858,7 +863,10 @@
     }
   }
 
-  /* ================= Déclaration (PDV) ================= */
+  /* ================= Déclaration (PDV) : assistant pas à pas ================= */
+
+  const ETAPES = [null, 'Type de paiement', "Détails de l'opération", "Ce qui s'est passé", 'Vérification et envoi'];
+  let etape = 1;
 
   function initDeclaration() {
     $('#nOps').innerHTML = C.OPERATEURS.map(function (o) {
@@ -866,20 +874,126 @@
     }).join('') + '<label class="only-f"><input type="radio" name="operateur" value=""><span>Espèces / autre</span></label>';
     $('#nIncident').innerHTML = '<option value="">— Choisir —</option>' + C.INCIDENTS_FORMALITE.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('');
 
+    // Choisir le type de paiement fait passer directement à l'étape suivante.
     $$('#fNew [name=nature]').forEach(function (r) {
-      r.addEventListener('change', function () { appliquerNature(r.value); });
+      r.addEventListener('change', function () { appliquerNature(r.value); allerA(2); });
     });
     $$('#mNew [data-close]').forEach(function (b) { b.addEventListener('click', fermerDeclaration); });
     $('#mNew').addEventListener('click', function (e) { if (e.target.id === 'mNew') fermerDeclaration(); });
+    $('#nPrev').addEventListener('click', function () { if (etape === 1) fermerDeclaration(); else allerA(etape - 1); });
+    $('#nNext').addEventListener('click', suivant);
+    $('#nSteps').addEventListener('click', function (e) {
+      const li = e.target.closest('li[data-step]');
+      if (li && Number(li.dataset.step) < etape) allerA(Number(li.dataset.step));
+    });
     $('#fNew').addEventListener('submit', soumettreDeclaration);
     $('#fNew').addEventListener('input', function (e) { if (e.target.classList) e.target.classList.remove('err'); });
+  }
+
+  function natureChoisie() {
+    return ($('#fNew [name=nature]:checked') || {}).value || '';
+  }
+
+  function donneesDeclaration() {
+    const f = $('#fNew');
+    const n = natureChoisie();
+    const formalite = n === 'FORMALITE';
+    return {
+      categorie: formalite ? 'FORMALITE' : 'MOBILE_MONEY',
+      type_operation: formalite ? '' : n,
+      operateur: (f.querySelector('[name=operateur]:checked') || {}).value || '',
+      date_operation: f.date_operation.value,
+      montant: f.montant.value,
+      telephone: formalite ? '' : f.telephone.value.trim(),
+      reference: formalite ? '' : f.reference.value.trim(),
+      incident: formalite ? f.incident.value : '',
+      num_liquidation: formalite ? f.num_liquidation.value.trim() : '',
+      formalite: formalite ? f.formalite.value.trim() : '',
+      description: f.description.value.trim(),
+      solution: f.solution.value,
+      // Pas de nom d'agent à saisir : la déclaration est faite au nom du point de vente.
+      declarant: S.session.profil,
+    };
+  }
+
+  // Champs obligatoires d'une étape ; renvoie ce qui manque et met les champs en évidence.
+  function controlerEtape(k) {
+    const f = $('#fNew');
+    const d = donneesDeclaration();
+    const manquants = [];
+    const exiger = function (ok, el, libelle) { if (!ok) { manquants.push(libelle); if (el) el.classList.add('err'); } };
+    if (k === 1) exiger(natureChoisie(), null, 'le type de paiement');
+    if (k === 2) {
+      if (d.categorie === 'FORMALITE') {
+        exiger(d.incident, f.incident, "l'incident survenu");
+        exiger(d.num_liquidation, f.num_liquidation, 'le n° de liquidation');
+        exiger(d.formalite, f.formalite, 'la formalité voulue');
+      } else {
+        exiger(d.operateur, null, "l'opérateur");
+      }
+      exiger(Number(d.montant) > 0, f.montant, 'le montant');
+      exiger(d.date_operation, f.date_operation, "la date de l'opération");
+    }
+    if (k === 3) {
+      exiger(d.description, f.description, "ce qui s'est passé");
+      exiger(d.solution, f.solution, 'la solution demandée');
+    }
+    return manquants;
+  }
+
+  function signalerManquants(manquants) {
+    $('#nErr').textContent = 'À compléter : ' + manquants.join(', ') + '.';
+    const premier = $('#fNew .err');
+    if (premier) premier.focus();
+  }
+
+  function suivant() {
+    const manquants = controlerEtape(etape);
+    if (manquants.length) { signalerManquants(manquants); return; }
+    allerA(etape + 1);
+  }
+
+  function allerA(k) {
+    etape = k;
+    $('#nErr').textContent = '';
+    $$('#fNew .nstep').forEach(function (s) { s.hidden = Number(s.dataset.step) !== k; });
+    $$('#nSteps li').forEach(function (li) {
+      const n = Number(li.dataset.step);
+      li.className = n < k ? 'fait' : n === k ? 'actif' : '';
+    });
+    $('#mNewTitle').textContent = ETAPES[k];
+    $('#nPrev').innerHTML = k === 1 ? ico('x') + 'Annuler' : ico('arrow-left') + 'Précédent';
+    $('#nNext').hidden = k === 4;
+    $('#nSubmit').hidden = k !== 4;
+    if (k === 4) rendreRecap();
+    icones();
+    $('#mNew').scrollTop = 0;
+    const champ = $('#fNew .nstep[data-step="' + k + '"]').querySelector('input:not([type=radio]), select, textarea');
+    if (champ && window.innerWidth > 700) champ.focus();
+  }
+
+  function rendreRecap() {
+    const d = donneesDeclaration();
+    const it = function (l, v, large) {
+      return '<div class="pi' + (large ? ' w' : '') + '"><div class="pil">' + l + '</div><div class="piv">' + (v || '<span class="z">—</span>') + '</div></div>';
+    };
+    const n = NATURES[natureChoisie()];
+    const champs = [it('Type de paiement', n ? ico(n.ico) + ' ' + n.libelle : '')];
+    if (d.categorie === 'FORMALITE') {
+      champs.push(it('Incident survenu', esc(d.incident)), it('N° de liquidation', esc(d.num_liquidation)),
+        it('Formalité voulue', esc(d.formalite)), it('Moyen de paiement', d.operateur ? pastilleOp(d.operateur) : ''));
+    } else {
+      champs.push(it('Opérateur', pastilleOp(d.operateur)), it('N° client', esc(d.telephone)), it('Référence transaction', esc(d.reference)));
+    }
+    champs.push(it('Montant', fcfa(d.montant)), it("Date de l'opération", fDateHeure(d.date_operation)),
+      it("Ce qui s'est passé", esc(d.description), true), it('Solution demandée', esc(d.solution), true));
+    $('#nRecap').innerHTML = champs.join('');
   }
 
   function appliquerNature(n) {
     const formalite = n === 'FORMALITE';
     $('#mNew').classList.toggle('n-mm', !formalite);
     $('#mNew').classList.toggle('n-f', formalite);
-    $('#nFields').hidden = false;
     const solutions = formalite ? C.SOLUTIONS_FORMALITE : C.SOLUTIONS_MOBILE_MONEY;
     const avant = $('#nSolution').value;
     $('#nSolution').innerHTML = '<option value="">— Choisir —</option>' + solutions.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('');
@@ -898,18 +1012,16 @@
     f.reset();
     $$('.err', f).forEach(function (x) { x.classList.remove('err'); });
     $('#mNew').classList.remove('n-mm', 'n-f');
-    $('#nFields').hidden = true;
-    $('#nErr').textContent = '';
-    $('#mNewTitle').textContent = 'Point de vente : ' + S.session.profil;
+    $('#mNewPdv').textContent = 'Nouvelle déclaration · ' + S.session.profil;
     $('#nDate').value = maintenantLocal();
     $('#nDate').max = maintenantLocal();
-    $('#nAgent').value = memoire.lire(cleAgent()) || '';
     const formalites = {};
     C.FORMALITES.concat(S.incidents.map(function (i) { return i.formalite; })).forEach(function (x) { if (x) formalites[x] = true; });
     $('#dlFormalites').innerHTML = Object.keys(formalites).sort().map(function (x) { return '<option value="' + esc(x) + '">'; }).join('');
     $('#nSubmit').disabled = false;
     $('#mNew').hidden = false;
     document.body.style.overflow = 'hidden';
+    allerA(1);
   }
 
   function fermerDeclaration() {
@@ -919,61 +1031,23 @@
 
   async function soumettreDeclaration(e) {
     e.preventDefault();
-    const f = e.target;
-    const n = (f.querySelector('[name=nature]:checked') || {}).value;
-    const err = $('#nErr');
-    err.textContent = '';
-    if (!n) { err.textContent = 'Choisissez d\'abord le type de paiement concerné.'; return; }
-    const formalite = n === 'FORMALITE';
-    const data = {
-      categorie: formalite ? 'FORMALITE' : 'MOBILE_MONEY',
-      type_operation: formalite ? '' : n,
-      operateur: (f.querySelector('[name=operateur]:checked') || {}).value || '',
-      date_operation: f.date_operation.value,
-      montant: f.montant.value,
-      telephone: formalite ? '' : f.telephone.value.trim(),
-      reference: formalite ? '' : f.reference.value.trim(),
-      incident: formalite ? f.incident.value : '',
-      num_liquidation: formalite ? f.num_liquidation.value.trim() : '',
-      formalite: formalite ? f.formalite.value.trim() : '',
-      description: f.description.value.trim(),
-      solution: f.solution.value,
-      declarant: f.declarant.value.trim(),
-    };
-
-    // Contrôle des champs obligatoires avant envoi
-    const manquants = [];
-    const exiger = function (ok, el, libelle) { if (!ok) { manquants.push(libelle); if (el) el.classList.add('err'); } };
-    if (formalite) {
-      exiger(data.incident, f.incident, "l'incident survenu");
-      exiger(data.num_liquidation, f.num_liquidation, 'le n° de liquidation');
-      exiger(data.formalite, f.formalite, 'la formalité voulue');
-    } else {
-      exiger(data.operateur, null, "l'opérateur");
-    }
-    exiger(Number(data.montant) > 0, f.montant, 'le montant');
-    exiger(data.date_operation, f.date_operation, "la date de l'opération");
-    exiger(data.description, f.description, 'ce qui s\'est passé');
-    exiger(data.solution, f.solution, 'la solution demandée');
-    exiger(data.declarant, f.declarant, "le nom de l'agent");
-    if (manquants.length) {
-      err.textContent = 'À compléter : ' + manquants.join(', ') + '.';
-      const premier = f.querySelector('.err');
-      if (premier) premier.focus();
-      return;
+    // Entrée dans un champ : on avance d'une étape au lieu d'envoyer.
+    if (etape < 4) { suivant(); return; }
+    for (let k = 1; k < 4; k++) {
+      const manquants = controlerEtape(k);
+      if (manquants.length) { allerA(k); controlerEtape(k); signalerManquants(manquants); return; }
     }
 
     $('#nSubmit').disabled = true;
     try {
-      const inc = await Store.create(S.session, data);
-      memoire.ecrire(cleAgent(), data.declarant);
+      const inc = await Store.create(S.session, donneesDeclaration());
       fermerDeclaration();
       S.incidents.push(inc);
       rendre();
       toast('Incident ' + inc.id + ' déclaré. Le Back Office va le prendre en charge.', 'ok');
       ouvrirPanneau(inc.id);
     } catch (ex) {
-      err.textContent = ex.message;
+      $('#nErr').textContent = ex.message;
       $('#nSubmit').disabled = false;
     }
   }
