@@ -2,12 +2,15 @@
  * Accès aux données : API Google Apps Script (apps-script/Code.gs).
  * La feuille Google Sheets sert de base partagée entre les points de vente et le Back Office.
  * Interface : login, list, create, addAction.
+ *
+ * Mode démonstration : ajouter ?demo à l'URL pour tester l'interface avec des données fictives
+ * (rien n'est envoyé au serveur, tout est perdu au rechargement).
  */
 (function () {
   'use strict';
   const C = window.APP_CONFIG;
+  const DEMO = /[?&]demo\b/.test(location.search);
 
-  // Efface les données fictives laissées dans le navigateur par l'ancienne version de démonstration.
   try { localStorage.removeItem('sip_demo_v1'); } catch (e) { /* stockage indisponible */ }
 
   function erreur(code, message) {
@@ -42,8 +45,128 @@
     return data;
   }
 
-  window.Store = {
+  /* ---------------- Démonstration (données fictives en mémoire) ---------------- */
+
+  function demo() {
+    const BO = C.BACK_OFFICE;
+    const iso = function (d) { return new Date(d).toISOString(); };
+    const pause = function (v) { return new Promise(function (r) { setTimeout(function () { r(v); }, 250 + Math.random() * 250); }); };
+    let graine = 7;
+    const hasard = function () { graine = (graine * 16807) % 2147483647; return (graine - 1) / 2147483646; };
+    const pick = function (t) { return t[Math.floor(hasard() * t.length)]; };
+    const incidents = [];
+    const actions = [];
+    let seq = 0;
+    const nouvelId = function (d) { seq += 1; return 'INC-' + String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(seq).padStart(4, '0'); };
+    const libelle = function (code) {
+      if (code === 'COMPLEMENT') return "Complément d'information du PDV";
+      const a = C.ACTIONS_BO.find(function (x) { return x.code === code; });
+      return a ? a.libelle : code;
+    };
+
+    function ajouterAction(inc, code, auteur, agent, quand, commentaire, reference) {
+      const def = C.ACTIONS_BO.find(function (x) { return x.code === code; });
+      if (def && def.statut) inc.statut = def.statut;
+      const a = {
+        id: 'ACT-' + (actions.length + 1), incident_id: inc.id, code: code, libelle: libelle(code),
+        auteur: auteur, agent: agent, commentaire: commentaire || '', reference: reference || '',
+        statut_apres: inc.statut, cree_le: iso(quand),
+      };
+      actions.push(a);
+      inc.derniere_action = a.libelle;
+      inc.maj_le = a.cree_le;
+      if (inc.statut === 'TERMINE' || inc.statut === 'REJETE') inc.cloture_le = a.cree_le;
+      return a;
+    }
+
+    const descs = {
+      DEPOT: ['Le client a fait un dépôt, notre compte a été débité mais il n\'a rien reçu.', 'Dépôt effectué sur un mauvais numéro, le client demande l\'annulation.', 'Transaction restée en attente côté opérateur.'],
+      RETRAIT: ['Retrait validé par le client mais notre compte n\'a pas été crédité.', 'Le client a été débité deux fois pour un seul retrait.'],
+      FORMALITE: ['L\'usager a payé mais la formalité n\'a pas été générée.', 'Le montant débité ne correspond pas au montant de la formalité.'],
+    };
+    const agents = ['K. Yao', 'A. Traoré', 'M. Koné'];
+    const now = Date.now();
+    for (let k = 0; k < 74; k++) {
+      const ageH = Math.pow(hasard(), 1.6) * 24 * 75;
+      const cree = new Date(now - ageH * 36e5);
+      const nat = pick(['DEPOT', 'DEPOT', 'RETRAIT', 'RETRAIT', 'FORMALITE']);
+      const f = nat === 'FORMALITE';
+      const pdv = pick(C.POINTS_DE_VENTE.slice(0, 18));
+      const inc = {
+        id: nouvelId(cree), pdv: pdv, declarant: pdv, categorie: f ? 'FORMALITE' : 'MOBILE_MONEY', type_operation: f ? '' : nat,
+        operateur: f && hasard() < .3 ? '' : pick(C.OPERATEURS).code,
+        date_operation: iso(cree.getTime() - hasard() * 6 * 36e5),
+        montant: pick([5000, 10000, 15000, 25000, 50000, 75000, 100000, 150000, 250000, 600000, 1200000]),
+        telephone: f ? '' : '07' + String(Math.floor(hasard() * 1e8)).padStart(8, '0'),
+        reference: f ? '' : 'TX' + Math.floor(hasard() * 1e10),
+        incident: f ? pick(C.INCIDENTS_FORMALITE.slice(0, 5)) : '',
+        num_liquidation: f ? 'LQ' + Math.floor(hasard() * 1e7) : '',
+        formalite: f ? pick(['Carte grise', 'Mutation', 'Duplicata', 'Visite technique']) : '',
+        description: pick(descs[nat]),
+        solution: pick(f ? C.SOLUTIONS_FORMALITE.slice(0, 4) : C.SOLUTIONS_MOBILE_MONEY.slice(0, 5)),
+        statut: 'NOUVEAU', derniere_action: 'Déclaration', cree_le: iso(cree), maj_le: iso(cree), cloture_le: '',
+      };
+      incidents.push(inc);
+      const agent = pick(agents);
+      const r = hasard();
+      if (ageH < 10 && r < .7) continue;
+      if (r < .12) continue; // reste « Nouveau »
+      const t = function (h) { return Math.min(now - 60e3, cree.getTime() + h * 36e5); };
+      ajouterAction(inc, 'PRISE_EN_CHARGE', BO, agent, t(1 + hasard() * 8));
+      if (r < .3) continue;
+      ajouterAction(inc, pick(['CREATION_CA', 'RELANCE', 'DEMANDE_REGULARISATION']), BO, agent, t(10 + hasard() * 10), 'Dossier transmis à l\'opérateur.', 'CA-' + Math.floor(hasard() * 1e5));
+      if (r < .42) { ajouterAction(inc, 'INFO_PDV', BO, agent, t(22), 'Merci de nous transmettre la capture du reçu client.'); continue; }
+      if (r < .5) {
+        ajouterAction(inc, 'INFO_PDV', BO, agent, t(22), 'Pouvez-vous confirmer le numéro du client ?');
+        ajouterAction(inc, 'COMPLEMENT', pdv, pdv, t(26), 'Numéro confirmé, capture envoyée par mail.');
+        continue;
+      }
+      if (ageH < 30) continue;
+      if (r < .9) ajouterAction(inc, 'TERMINE', BO, agent, t(24 + hasard() * 48), 'Régularisation effectuée par l\'opérateur.');
+      else ajouterAction(inc, 'REJETE', BO, agent, t(24 + hasard() * 24), 'La transaction a bien abouti côté opérateur.');
+    }
+
+    function verifier(s) {
+      if (s.profil !== BO && C.POINTS_DE_VENTE.indexOf(s.profil) < 0) throw erreur('PROFIL_INCONNU', 'Profil inconnu.');
+      return { ok: true, profil: s.profil };
+    }
+    const copie = function (o) { return JSON.parse(JSON.stringify(o)); };
+
+    return {
+      configure: true,
+      demo: true,
+      login: function (s) { return pause(verifier(s)); },
+      list: function (s) {
+        verifier(s);
+        const mes = s.profil === BO ? incidents : incidents.filter(function (i) { return i.pdv === s.profil; });
+        const ids = {};
+        mes.forEach(function (i) { ids[i.id] = true; });
+        return pause({ ok: true, incidents: copie(mes), actions: copie(actions.filter(function (a) { return ids[a.incident_id]; })) });
+      },
+      create: function (s, data) {
+        verifier(s);
+        const d = new Date();
+        const inc = Object.assign({}, data, {
+          id: nouvelId(d), pdv: s.profil, statut: 'NOUVEAU', derniere_action: 'Déclaration',
+          cree_le: iso(d), maj_le: iso(d), cloture_le: '',
+        });
+        inc.date_operation = inc.date_operation ? iso(inc.date_operation) : iso(d);
+        incidents.push(inc);
+        return pause(copie(inc));
+      },
+      addAction: function (s, data) {
+        verifier(s);
+        const inc = incidents.find(function (i) { return i.id === data.incident_id; });
+        if (!inc) return Promise.reject(erreur('INTROUVABLE', 'Incident introuvable.'));
+        const a = ajouterAction(inc, data.code, s.profil, data.agent, Date.now(), data.commentaire, data.reference);
+        return pause({ ok: true, incident: copie(inc), action: copie(a) });
+      },
+    };
+  }
+
+  window.Store = DEMO ? demo() : {
     configure: !!C.API_URL,
+    demo: false,
     login: function (s) { return appel({ action: 'login', profil: s.profil, code: s.code }); },
     list: function (s) { return appel({ action: 'list', profil: s.profil, code: s.code }); },
     create: function (s, data) {

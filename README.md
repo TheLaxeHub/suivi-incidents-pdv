@@ -17,23 +17,24 @@ Le site est un tableau de bord statique (HTML/CSS/JS, Chart.js, SheetJS, icônes
 À l'ouverture, l'utilisateur choisit son profil : l'un des **28 points de vente** (ABOBO, ABOISSO, AGBOVILLE, ANGRE, BONDOUKOU, BONGOUANOU, BOUAKE, BOUNA, BOUNDIALI, COSMOS, DAOUKRO, DIMBOKRO, DIVO, FERKE, FOURRIERE ABOBO, FOURRIERE BASSAM, GUIGLO, KONG, MANKONO, KATIOLA, ODIENNE, PHB, SASSANDRA, SEGUELA, TOUBA, SIEGE, VGE, YOPOUGON) ou le **Back Office**. Un code d'accès peut être exigé par profil (facultatif, voir plus bas). Le profil reste connecté sur l'appareil jusqu'au clic sur **« Se déconnecter »**.
 
 ### Point de vente
-- **Déclarer un incident**
-  - *Dépôt / Retrait* : opérateur, montant, date et heure, n° du client, référence de la transaction, **ce qui s'est passé**, **solution demandée** (remboursement, annulation, régularisation…).
-  - *Paiement de formalité* : **incident survenu** (débit à tort…), **n° de liquidation**, **formalité voulue**, **montant**, moyen de paiement, explication, solution demandée.
-- **Mes déclarations** : registre filtrable avec statut, dernière action du Back Office et ancienneté.
-- Détail de chaque incident avec l'**historique du traitement**, et possibilité d'envoyer un **complément d'information** au Back Office.
-- **Statistiques du PDV** : indicateurs, graphiques, alertes, réponses récentes du Back Office.
+- **Accueil** : trois boutons *Dépôt / Retrait / Formalité* pour déclarer en un clic, les incidents pour lesquels **le Back Office attend une réponse**, les indicateurs du PDV et les dernières nouvelles (non lues signalées).
+- **Déclarer un incident** — assistant en 4 étapes :
+  - *Dépôt / Retrait* : opérateur, montant (saisi avec séparateurs), date et heure (raccourcis « Maintenant », « Hier »…), n° du client, référence de la transaction.
+  - *Paiement de formalité* : incident survenu, n° de liquidation, formalité voulue, montant, moyen de paiement.
+  - Explication (phrases types proposées) et solution demandée, puis vérification avec **alerte de doublon** si un incident proche existe déjà. Un brouillon est conservé si l'assistant est fermé.
+- **Mes déclarations** : en cours / clôturés, recherche, suivi en 4 étapes (Déclaré → Pris en charge → En traitement → Résolu), réponse au Back Office depuis le détail.
+- **Statistiques** du PDV.
 
 ### Back Office
-- **Registre de tous les incidents**, filtres par période, point de vente, nature, opérateur, statut, recherche libre.
-- **Actions de suivi** sur chaque incident, avec référence (n° de CA, n° de demande…) et commentaire :
-  Prise en charge · **Création de CA** · **Demande de régularisation** · Relance opérateur · Demande d'information au PDV · Commentaire · **Terminée** · Rejetée.
-- **Statistiques** : taux de traitement, montants concernés et encore ouverts, délai moyen de résolution, répartition par opérateur / statut / nature, évolution dans le temps, **classement et synthèse par point de vente**.
-- **Alertes** : incidents non pris en charge depuis plus de 48 h, montants élevés non résolus, dernières actions.
+- **File de traitement** : À prendre en charge (du plus ancien au plus récent, retards > 48 h signalés) · En traitement (réponses des PDV en tête) · En attente du PDV · Clôturés sur 7 jours. Bouton **« Prendre en charge »** directement depuis la liste.
+- **Détail d'un incident** : étape suivante proposée selon l'état, actions de suivi avec référence et commentaire (Prise en charge · Création de CA · Demande de régularisation · Relance opérateur · Demande d'information au PDV · Commentaire · Terminée · Rejetée), navigation vers l'incident suivant (touches J / K).
+- **Pilotage** : indicateurs comparés à la période précédente, répartition par état, évolution, montants par nature, par opérateur, points de vente les plus concernés.
+- **Registre** complet, triable et filtrable, et **Synthèse par PDV** avec indicateur de santé.
 
 ### Pour tous
-- Export **Excel** du registre filtré (incidents, actions de suivi, synthèse par PDV) et impression / **PDF**.
-- Utilisable sur ordinateur et sur téléphone.
+- **Recherche rapide** d'un incident (Ctrl K ou /) par n°, référence, téléphone, liquidation…
+- Export **Excel** (incidents, actions de suivi, synthèse par PDV) et impression / **PDF**.
+- Thème clair / sombre, utilisable sur ordinateur et sur téléphone (barre d'onglets en bas).
 
 ### Cycle de vie d'un incident
 
@@ -123,6 +124,8 @@ Servez le dossier avec n'importe quel serveur web, par exemple WampServer (`http
 ```bash
 npx serve .
 ```
+
+Ajoutez `?demo` à l'adresse (ex. `index.html?demo`) pour tester l'interface avec des **données fictives** : rien n'est envoyé à Google Sheets.
 
 ## À savoir
 
