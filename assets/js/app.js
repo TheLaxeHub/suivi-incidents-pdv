@@ -1034,12 +1034,9 @@
     return '<section class="hero">' +
       '<div><h2>' + salut + ', ' + esc(moi()) + '</h2><p>' +
       (st.ouverts ? st.ouverts + ' incident(s) en cours de traitement pour ' + fcfa(st.montantOuvert) + '.' : 'Aucun incident en cours. Tout est en ordre.') +
-      '</p><p class="hero-hint">Un problème avec un paiement ? Choisissez son type pour le déclarer :</p></div>' +
-      '<div class="hero-q">' +
-      '<button type="button" data-new="DEPOT"><span class="hi">' + ico('arrow-down-to-line') + '</span><span>Dépôt<small>Mobile Money</small></span></button>' +
-      '<button type="button" data-new="RETRAIT"><span class="hi">' + ico('arrow-up-from-line') + '</span><span>Retrait<small>Mobile Money</small></span></button>' +
-      '<button type="button" data-new="FORMALITE"><span class="hi">' + ico('file-text') + '</span><span>Formalité<small>Débit, liquidation…</small></span></button>' +
-      '</div></section>' +
+      '</p><p class="hero-hint">Un problème avec un paiement ? Déclarez-le en quelques étapes.</p></div>' +
+      '<button type="button" class="btn bp btn-hero" data-new="">' + ico('plus') + 'Déclarer un incident</button>' +
+      '</section>' +
 
       (attente.length ? '<section class="attn"><div class="sh"><h2 class="sh-t">' + ico('message-circle-question') + 'Le Back Office attend votre réponse <span class="cnt">' + attente.length + '</span></h2><span class="sh-r">Répondez pour débloquer le traitement</span></div>' +
         '<div class="card">' + liste(attente, { mini: true }, {}) + '</div></section>' : '') +

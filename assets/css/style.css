@@ -1011,3 +1011,4 @@ button.kc.on{border-color:var(--kc);box-shadow:0 0 0 3px color-mix(in srgb,var(-
 .wz .ops>label>span{padding:0 14px}
 .wz .ops>label>span b{overflow:visible}
 .mdl .wz .ops{grid-template-columns:repeat(3,minmax(0,1fr))}
+.btn-hero{height:44px;padding:0 20px;font-size:14px;border-radius:var(--r-sm)}
