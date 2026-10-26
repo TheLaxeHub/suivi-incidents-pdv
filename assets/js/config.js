@@ -33,9 +33,9 @@ window.APP_CONFIG = {
 
   OPERATEURS: [
     { code: 'ORANGE', nom: 'Orange Money', couleur: '#FF7900' },
-    { code: 'WAVE', nom: 'Wave', couleur: '#1DC8F2' },
     { code: 'MTN', nom: 'MTN MoMo', couleur: '#FFC000' },
     { code: 'MOOV', nom: 'Moov Money', couleur: '#0A57B5' },
+    { code: 'WAVE', nom: 'Wave', couleur: '#1DC8F2' },
     { code: 'DOO', nom: 'Doo', couleur: '#00A389' },
     { code: 'DJAMO', nom: 'Djamo', couleur: '#6E3FE0' },
   ],

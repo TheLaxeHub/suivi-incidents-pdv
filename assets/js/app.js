@@ -985,7 +985,7 @@
       Object.keys(NATURES).map(function (n) { return '<option value="' + n + '"' + (n === valeur ? ' selected' : '') + '>' + NATURES[n].libelle + '</option>'; }).join('') + '</select>';
   }
   function selectOp(champ, valeur) {
-    return '<select class="in in-sm" id="sel-' + champ.replace('.', '-') + '" data-f="' + champ + '" aria-label="Opérateur"><option value="">Tous opérateurs</option>' +
+    return '<select class="in in-sm" id="sel-' + champ.replace('.', '-') + '" data-f="' + champ + '" aria-label="Moyen de paiement"><option value="">Tous moyens de paiement</option>' +
       C.OPERATEURS.map(function (o) { return '<option value="' + esc(o.code) + '"' + (o.code === valeur ? ' selected' : '') + '>' + esc(o.nom) + '</option>'; }).join('') + '</select>';
   }
   function recherche(champ, valeur, ph) {
@@ -1171,7 +1171,7 @@
       '<section class="cg">' +
       '<div class="card c8"><h3 class="ct">Déclarations et clôtures dans le temps</h3><p class="cs">Nombre d\'incidents déclarés et traités</p><div class="ch"><canvas id="cEvol"></canvas></div></div>' +
       '<div class="card c4"><h3 class="ct">Montant par nature</h3><p class="cs">En FCFA, sur la période</p><div class="ch ring"><canvas id="cNature"></canvas><div class="ring-c"><b>' + compact(st.montant) + '</b><small>FCFA</small></div></div></div>' +
-      '<div class="card ' + (estBO() ? 'c6' : 'c12') + '"><h3 class="ct">Par opérateur</h3><p class="cs">Incidents déclarés, par état</p><div class="ch"><canvas id="cOp"></canvas></div></div>' +
+      '<div class="card ' + (estBO() ? 'c6' : 'c12') + '"><h3 class="ct">Par moyen de paiement</h3><p class="cs">Incidents déclarés, par état</p><div class="ch"><canvas id="cOp"></canvas></div></div>' +
       (estBO() ? '<div class="card c6"><div class="sh" style="margin:0"><div><h3 class="ct">Points de vente les plus concernés</h3><p class="cs">Cliquez pour voir leurs incidents</p></div><a class="lnk" href="#/pdv">Synthèse ' + ico('arrow-right') + '</a></div>' + classementPdv(items) + '</div>' : '') +
       '</section>';
   }
@@ -1438,7 +1438,7 @@
         it('Moyen de paiement', i.operateur ? pastilleOp(i.operateur) : 'Espèces / autre'),
         it("Date de l'opération", fDateOp(i.date_operation)), it('Déclaré le', fDateHeure(i.cree_le)),
         it('Déclaré par', esc(declarePar(i)), true)]
-      : [it('Opérateur', pastilleOp(i.operateur)), it("Date de l'opération", fDateOp(i.date_operation)),
+      : [it('Moyen de paiement', pastilleOp(i.operateur)), it("Date de l'opération", fDateOp(i.date_operation)),
         it('N° client', i.telephone ? '<span class="mono">' + esc(i.telephone) + '</span>' : '', false, i.telephone),
         it('Référence transaction', i.reference ? '<span class="mono">' + esc(i.reference) + '</span>' : '', 2, i.reference),
         it('Déclaré le', fDateHeure(i.cree_le)), it('Déclaré par', esc(declarePar(i)), true)];
@@ -1824,7 +1824,7 @@
         exiger(d.num_liquidation, f.num_liquidation, 'le n° de liquidation');
         exiger(d.formalite, f.formalite, 'la formalité voulue');
       } else {
-        exiger(d.operateur, $('#nOps'), "l'opérateur");
+        exiger(d.operateur, $('#nOps'), 'le moyen de paiement');
       }
       if (d.categorie === 'FORMALITE') {
         exiger(d.operateur, $('#nOps'), 'le moyen de paiement');
@@ -1900,7 +1900,7 @@
         ligne('N° de liquidation', '<span class="mono">' + esc(d.num_liquidation) + '</span>', 'hash'),
         ligne('Moyen de paiement', d.operateur ? pastilleOp(d.operateur) : 'Espèces / autre', 'wallet'),
         ligne("Date de l'opération", fDateOp(d.date_operation), 'calendar')]
-      : [ligne('Opérateur', pastilleOp(d.operateur), 'smartphone'), ligne("Date de l'opération", fDateOp(d.date_operation), 'calendar'),
+      : [ligne('Moyen de paiement', pastilleOp(d.operateur), 'wallet'), ligne("Date de l'opération", fDateOp(d.date_operation), 'calendar'),
         ligne('N° du client', d.telephone ? '<span class="mono">' + esc(d.telephone) + '</span>' : '', 'phone'),
         ligne('Référence', d.reference ? '<span class="mono">' + esc(d.reference) + '</span>' : '', 'hash')];
     const sousTitreRecap = d.categorie === 'FORMALITE' ? 'Paiement de formalité' : 'Mobile Money · ' + (d.operateur ? operateur(d.operateur).nom : '');
@@ -1939,7 +1939,7 @@
     $('#tkIco').className = 'tk-i' + (n ? ' n-' + natureChoisie() : '');
     $('#tkIco').innerHTML = ico(n ? n.ico : 'receipt');
     $('#tkNat').textContent = n ? n.libelle + (d.categorie === 'FORMALITE' && d.incident ? ' · ' + d.incident : '') : 'Nouvel incident';
-    $('#tkOp').innerHTML = op ? logoOp(op) + esc(op.nom) : (d.categorie === 'FORMALITE' ? esc(d.formalite || 'Formalité à préciser') : 'Opérateur à choisir');
+    $('#tkOp').innerHTML = op ? logoOp(op) + esc(op.nom) : (d.categorie === 'FORMALITE' ? esc(d.formalite || 'Formalité à préciser') : 'Moyen de paiement à choisir');
     $('#tkAmt').textContent = Number(d.montant) > 0 ? nombre(d.montant) : '0';
     $('#tkDate').textContent = d.date_operation ? fDateOp(d.date_operation) : '—';
     const ref = d.categorie === 'FORMALITE' ? d.num_liquidation : d.reference;
@@ -2068,7 +2068,7 @@
     XLSX.utils.book_append_sheet(wb, feuille(lignes.map(function (i) {
       return {
         'N°': i.id, 'Point de vente': i.pdv, 'Nature': NATURES[nature(i)] ? NATURES[nature(i)].libelle : '',
-        'Opérateur': opNom(i.operateur), "Date de l'opération": fDateOp(i.date_operation), 'Montant (FCFA)': Number(i.montant) || 0,
+        'Moyen de paiement': opNom(i.operateur), "Date de l'opération": fDateOp(i.date_operation), 'Montant (FCFA)': Number(i.montant) || 0,
         'N° client': i.telephone, 'Référence transaction': i.reference, 'Incident (formalité)': i.incident,
         'N° liquidation': i.num_liquidation, 'Formalité voulue': i.formalite, "Ce qui s'est passé": i.description,
         'Solution demandée': i.solution, 'État': ETATS[etat(i)].libelle, 'Dernière action': i.derniere_action,

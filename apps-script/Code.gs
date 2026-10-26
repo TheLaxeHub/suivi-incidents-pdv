@@ -330,7 +330,7 @@ function valider_(d) {
     inc.telephone = texte_(d.telephone, 30);
     inc.reference = texte_(d.reference, 80);
     if (!inc.type_operation) throw erreur_('VALIDATION', 'Précisez s\'il s\'agit d\'un dépôt ou d\'un retrait.');
-    if (!inc.operateur) throw erreur_('VALIDATION', "Choisissez l'opérateur.");
+    if (!inc.operateur) throw erreur_('VALIDATION', 'Choisissez le moyen de paiement.');
   } else {
     inc.incident = texte_(d.incident, 120);
     inc.num_liquidation = texte_(d.num_liquidation, 60);
