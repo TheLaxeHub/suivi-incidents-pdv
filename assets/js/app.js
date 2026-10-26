@@ -1459,8 +1459,8 @@
     ];
     const track = '<div class="track" style="--tc:' + tc + '">' + pas.map(function (p, n) {
       const on = n + 1 <= st;
-      return '<div class="track-s' + (on ? ' on' : '') + (n + 1 === st ? ' cur' : '') + '"><span class="track-d">' + ico(on ? p.ico : 'circle') + '</span>' + p.l +
-        '<small>' + (on && p.d ? quand(p.d) : '') + '</small></div>';
+      return '<div class="track-s' + (on ? ' on' : '') + (n + 1 === st ? ' cur' : '') + '"><span class="track-d">' + ico(on ? p.ico : 'circle') + '</span><span class="track-l">' + p.l +
+        '<small>' + (on && p.d ? quand(p.d) : 'à venir') + '</small></span></div>';
     }).join('') + '</div>';
 
     // Fil de suivi
@@ -1476,11 +1476,13 @@
 
     // Deux colonnes : le dossier à gauche, l'échange avec le Back Office à droite (sans défilement de la page).
     $('#pBody').innerHTML =
-      '<div class="p-grid"><div class="p-head" style="--tc:' + tc + '"><div class="p-head-l">' +
-      '<div class="p-id">' + icoNature(i) + '<span class="mono">' + esc(i.id) + '</span><button type="button" class="cp" data-copy="' + esc(i.id) + '" title="Copier le n°">' + ico('copy') + '</button>' + badge(e) + tagAge(i) + '</div>' +
-      '<div class="p-hero"><h2 class="p-amt" id="pTitle">' + nombre(i.montant) + '<small>FCFA</small></h2>' +
-      '<div class="p-sub"><span>' + esc(sousTitre(i)) + '</span>' + (estBO() ? '<span class="z">·</span><b>' + esc(i.pdv) + '</b>' : '') + (op ? '<span class="z">·</span>' + pastilleOp(i.operateur) : '') + '</div></div>' +
-      '</div>' + track + '</div><div class="p-col p-l">' + prochaineEtape(i) +
+      '<div class="p-grid"><div class="p-head" style="--tc:' + tc + '">' +
+      '<span class="p-nat n-' + nature(i) + '">' + ico((NATURES[nature(i)] || NATURES.DEPOT).ico) + '</span>' +
+      '<div class="p-id"><span class="mono">' + esc(i.id) + '</span><button type="button" class="cp" data-copy="' + esc(i.id) + '" title="Copier le n°">' + ico('copy') + '</button>' + badge(e) + tagAge(i) + '</div>' +
+      '<div class="p-head-m"><h2 class="p-ttl" id="pTitle">' + esc(sousTitre(i)) + '</h2>' +
+      '<div class="p-sub">' + (estBO() ? '<span class="p-pdv">' + ico('store') + esc(i.pdv) + '</span>' : '') + '<span>Déclaré ' + ilya(i.cree_le) + ' · ' + fDateHeure(i.cree_le) + '</span></div></div>' +
+      '<div class="p-amt-box"><small>Montant</small><div class="p-amt">' + nombre(i.montant) + '<small>FCFA</small></div></div>' +
+      '</div><div class="p-steps">' + track + '</div><div class="p-col p-l">' + prochaineEtape(i) +
       '<div class="ps"><div class="pst">' + ico('info') + 'Informations déclarées</div><div class="pg">' + champs.join('') + '</div></div>' +
       '<div class="ps"><div class="pst">' + ico('message-square-text') + 'Ce qui s\'est passé</div><div class="ptx">' + esc(i.description) + '</div></div>' +
       '</div><div class="p-col p-r">' +
@@ -1542,6 +1544,7 @@
           const t = a.statut === 'TERMINE' ? ' class="t-ok"' : a.statut === 'REJETE' ? ' class="t-ko"' : '';
           return '<label' + t + ' title="' + esc(a.libelle) + '"><input type="radio" name="code" value="' + esc(a.code) + '"><span>' + ico(ICO_ACTION[a.code] || 'dot') + esc(COURTS_ACTION[a.code] || a.libelle) + '</span></label>';
         }).join('') + '</div>' +
+        '<p class="cmp-hint">' + ico('mouse-pointer-click') + 'Choisissez une action pour la renseigner.</p>' +
         '<div id="aRefWrap" hidden><div class="fr fr-act"><div class="fcol" id="aRefCol"><label class="fl" for="aRef" id="aRefL">Référence</label><input class="in" id="aRef" name="reference" autocomplete="off"></div>' +
         '<div class="fcol" id="aEnvWrap" hidden><label class="fl" for="aEnv">Date d\'envoi du mail *</label><input class="in" id="aEnv" name="date_envoi" type="date" max="' + cleJour(new Date()) + '"></div></div></div>' +
         '<label class="fl" for="aCom" id="aComL">Commentaire</label><textarea class="in" id="aCom" name="commentaire" rows="2" placeholder="Détail de l\'action, réponse de l\'opérateur, consigne au PDV…"></textarea>' +
@@ -1590,6 +1593,7 @@
         const def = C.ACTIONS_BO.find(function (a) { return a.code === code; });
         $('#aGo').innerHTML = ico(code === 'TERMINE' ? 'circle-check' : code === 'REJETE' ? 'circle-x' : 'check') + (LIBELLES_ENVOI[code] || (def ? 'Enregistrer : ' + def.libelle : 'Enregistrer'));
         $('#aGo').className = 'btn ' + (code === 'TERMINE' ? 'b-ok' : code === 'REJETE' ? 'b-ko' : 'bp');
+        f.classList.toggle('choisi', !!code);
         icones();
       };
       f.addEventListener('change', function (e) { if (e.target.name === 'code') maj(); });
