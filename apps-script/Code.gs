@@ -338,6 +338,7 @@ function valider_(d) {
     if (!inc.incident) throw erreur_('VALIDATION', "Indiquez l'incident survenu.");
     if (!inc.num_liquidation) throw erreur_('VALIDATION', 'Indiquez le numéro de liquidation.');
     if (!inc.formalite) throw erreur_('VALIDATION', 'Indiquez la formalité voulue.');
+    if (!inc.operateur) throw erreur_('VALIDATION', 'Choisissez le moyen de paiement.');
   }
   if (!/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(inc.date_operation)) throw erreur_('VALIDATION', "Date de l'opération invalide.");
   if (!(inc.montant > 0)) throw erreur_('VALIDATION', 'Le montant doit être supérieur à 0.');

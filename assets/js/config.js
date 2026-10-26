@@ -42,12 +42,9 @@ window.APP_CONFIG = {
 
   // Incidents proposés pour un paiement de formalité.
   INCIDENTS_FORMALITE: [
-    'Débit à tort',
-    'Double débit',
-    'Débité mais formalité non générée',
-    'Montant débité erroné',
     'Paiement en attente / non confirmé',
-    'Autre',
+    'Montant débité erroné',
+    'Double débit',
   ],
 
   // Suggestions pour le champ « Formalité voulue » (complétées par les saisies déjà faites).

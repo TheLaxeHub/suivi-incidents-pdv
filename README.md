@@ -32,8 +32,8 @@ Pour ajouter ou retirer un agent : modifiez `BO_UTILISATEURS` **à la fois** dan
 ### Point de vente
 - **Accueil** : trois boutons *Dépôt / Retrait / Formalité* pour déclarer en un clic, les incidents pour lesquels **le Back Office attend une réponse**, les indicateurs du PDV et les dernières nouvelles (non lues signalées).
 - **Déclarer un incident** — assistant en 4 étapes, sans défilement, avec les étapes à gauche et un **ticket récapitulatif mis à jour en direct** :
-  - *Dépôt / Retrait* : opérateur, montant (saisi avec séparateurs), date et heure (raccourcis « Maintenant », « Hier »…), n° du client, référence de la transaction.
-  - *Paiement de formalité* : incident survenu, n° de liquidation, formalité voulue, montant, moyen de paiement.
+  - *Dépôt / Retrait* : opérateur, montant (saisi avec séparateurs), date de l'opération (raccourcis « Aujourd'hui », « Hier », « Avant-hier »), n° du client, référence de la transaction.
+  - *Paiement de formalité* : incident survenu (paiement en attente / non confirmé, montant débité erroné, double débit), n° de liquidation, formalité voulue, moyen de paiement (obligatoire), montant, date.
   - Explication (phrases types proposées), puis vérification avec **alerte de doublon** si un incident proche existe déjà. Un brouillon est conservé si l'assistant est fermé.
 - **Mes déclarations** : en cours / clôturés, recherche, suivi en 4 étapes (Déclaré → Pris en charge → En traitement → Résolu), réponse au Back Office depuis le détail.
 - **Statistiques** du PDV.

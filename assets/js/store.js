@@ -82,7 +82,7 @@
     const descs = {
       DEPOT: ['Le client a fait un dépôt, notre compte a été débité mais il n\'a rien reçu.', 'Dépôt effectué sur un mauvais numéro, le client demande l\'annulation.', 'Transaction restée en attente côté opérateur.'],
       RETRAIT: ['Retrait validé par le client mais notre compte n\'a pas été crédité.', 'Le client a été débité deux fois pour un seul retrait.'],
-      FORMALITE: ['L\'usager a payé mais la formalité n\'a pas été générée.', 'Le montant débité ne correspond pas au montant de la formalité.'],
+      FORMALITE: ['L\'usager a payé mais le paiement est resté en attente.', 'Le montant débité ne correspond pas au montant de la formalité.'],
     };
     const agents = ['K. Yao', 'A. Traoré', 'M. Koné'];
     const now = Date.now();
@@ -94,12 +94,12 @@
       const pdv = pick(C.POINTS_DE_VENTE.slice(0, 18));
       const inc = {
         id: nouvelId(cree), pdv: pdv, declarant: pdv, categorie: f ? 'FORMALITE' : 'MOBILE_MONEY', type_operation: f ? '' : nat,
-        operateur: f && hasard() < .3 ? '' : pick(C.OPERATEURS).code,
+        operateur: pick(C.OPERATEURS).code,
         date_operation: iso(cree.getTime() - hasard() * 6 * 36e5),
         montant: pick([5000, 10000, 15000, 25000, 50000, 75000, 100000, 150000, 250000, 600000, 1200000]),
         telephone: f ? '' : '07' + String(Math.floor(hasard() * 1e8)).padStart(8, '0'),
         reference: f ? '' : 'TX' + Math.floor(hasard() * 1e10),
-        incident: f ? pick(C.INCIDENTS_FORMALITE.slice(0, 5)) : '',
+        incident: f ? pick(C.INCIDENTS_FORMALITE) : '',
         num_liquidation: f ? 'LQ' + Math.floor(hasard() * 1e7) : '',
         formalite: f ? pick(['Carte grise', 'Mutation', 'Duplicata', 'Visite technique']) : '',
         description: pick(descs[nat]),
@@ -142,6 +142,7 @@
       if (!u) throw erreur('SESSION_EXPIREE', 'Session Back Office expirée, reconnectez-vous.');
       return { ok: true, profil: s.profil, user: { nom: u.nom, poste: u.poste, email: u.email } };
     }
+    const cleJourDemo = function (d) { return d.toISOString().slice(0, 10); };
     const copie = function (o) { return JSON.parse(JSON.stringify(o)); };
 
     return {
@@ -177,7 +178,7 @@
           id: nouvelId(d), pdv: s.profil, statut: 'NOUVEAU', derniere_action: 'Déclaration',
           cree_le: iso(d), maj_le: iso(d), cloture_le: '',
         });
-        inc.date_operation = inc.date_operation ? iso(inc.date_operation) : iso(d);
+        inc.date_operation = inc.date_operation || cleJourDemo(d);
         incidents.push(inc);
         return pause(copie(inc));
       },

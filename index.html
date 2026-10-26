@@ -9,7 +9,7 @@
 <link rel="icon" type="image/png" href="assets/img/logo-qfs.png">
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=public-sans:400,500,600,700|jetbrains-mono:500" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=20261027e">
+<link rel="stylesheet" href="assets/css/style.css?v=20261027g">
 <script>
   // Thème appliqué avant l'affichage pour éviter un flash.
   try { const t = localStorage.getItem('sip_theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) { /* stockage indisponible */ }
@@ -165,7 +165,7 @@
       <div class="tk" id="nLive">
         <div class="tk-h"><span class="tk-i" id="tkIco"><i data-lucide="receipt"></i></span><div><small id="tkNat">Nouvel incident</small><b id="tkOp">—</b></div></div>
         <div class="tk-amt"><span id="tkAmt">0</span><small>FCFA</small></div>
-        <div class="tk-row"><i data-lucide="calendar-clock"></i><span id="tkDate">—</span></div>
+        <div class="tk-row"><i data-lucide="calendar"></i><span id="tkDate">—</span></div>
         <div class="tk-row"><i data-lucide="hash"></i><span id="tkRef">Référence à préciser</span></div>
       </div>
     </aside>
@@ -186,7 +186,7 @@
           <div class="nat">
             <label><input type="radio" name="nature" value="DEPOT"><span class="n-DEPOT"><i data-lucide="arrow-down-to-line"></i><b>Dépôt</b><small>Mobile Money — le client dépose de l'argent</small><em>Choisir<i data-lucide="arrow-right"></i></em></span></label>
             <label><input type="radio" name="nature" value="RETRAIT"><span class="n-RETRAIT"><i data-lucide="arrow-up-from-line"></i><b>Retrait</b><small>Mobile Money — le client retire de l'argent</small><em>Choisir<i data-lucide="arrow-right"></i></em></span></label>
-            <label><input type="radio" name="nature" value="FORMALITE"><span class="n-FORMALITE"><i data-lucide="file-text"></i><b>Formalité</b><small>Débit à tort, double débit, formalité non générée…</small><em>Choisir<i data-lucide="arrow-right"></i></em></span></label>
+            <label><input type="radio" name="nature" value="FORMALITE"><span class="n-FORMALITE"><i data-lucide="file-text"></i><b>Formalité</b><small>Paiement en attente, montant erroné, double débit</small><em>Choisir<i data-lucide="arrow-right"></i></em></span></label>
           </div>
           <div class="wz-tip"><i data-lucide="lightbulb"></i><span>Astuce : gardez la <b>référence de la transaction</b> ou le <b>n° de liquidation</b> sous la main, le traitement sera beaucoup plus rapide.</span></div>
         </section>
@@ -202,7 +202,7 @@
           </div>
 
           <div class="fs">
-            <div class="fs-h"><span class="fs-i"><i data-lucide="smartphone"></i></span><b class="only-mm">Opérateur *</b><b class="only-f">Moyen de paiement</b><small class="only-mm">le service utilisé par le client</small><small class="only-f">facultatif</small></div>
+            <div class="fs-h"><span class="fs-i"><i data-lucide="smartphone"></i></span><b class="only-mm">Opérateur *</b><b class="only-f">Moyen de paiement *</b><small class="only-mm">le service utilisé par le client</small><small class="only-f">le service qui a été débité</small></div>
             <div class="ops" id="nOps"></div>
           </div>
 
@@ -214,10 +214,10 @@
                 <div class="amt-in"><input class="in" id="nMontant" name="montant" inputmode="numeric" autocomplete="off" placeholder="0"><span>FCFA</span></div>
               </div>
               <div class="fcol">
-                <label class="fl" for="nDate">Date et heure de l'opération *</label>
-                <div class="ix"><i data-lucide="calendar-clock"></i><input class="in" id="nDate" name="date_operation" type="datetime-local"></div>
+                <label class="fl" for="nDate">Date de l'opération *</label>
+                <div class="ix"><i data-lucide="calendar"></i><input class="in" id="nDate" name="date_operation" type="date"></div>
                 <div class="qd" id="nQuickDate">
-                  <button type="button" data-h="0">Maintenant</button><button type="button" data-h="1">Il y a 1 h</button><button type="button" data-h="3">Il y a 3 h</button><button type="button" data-h="24">Hier</button>
+                  <button type="button" data-j="0">Aujourd'hui</button><button type="button" data-j="1">Hier</button><button type="button" data-j="2">Avant-hier</button>
                 </div>
               </div>
             </div>
@@ -279,8 +279,8 @@
 <div class="ld" id="loader" hidden><div class="ld-s"></div></div>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
-<script src="assets/js/config.js?v=20261027e"></script>
-<script src="assets/js/store.js?v=20261027e"></script>
-<script src="assets/js/app.js?v=20261027e"></script>
+<script src="assets/js/config.js?v=20261027g"></script>
+<script src="assets/js/store.js?v=20261027g"></script>
+<script src="assets/js/app.js?v=20261027g"></script>
 </body>
 </html>

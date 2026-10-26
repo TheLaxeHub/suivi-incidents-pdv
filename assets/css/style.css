@@ -695,7 +695,7 @@ button.kc.on{border-color:var(--kc);box-shadow:0 0 0 3px color-mix(in srgb,var(-
 .fs-i svg.lucide{width:14px;height:14px}
 .fs .fl{margin:0 0 6px;font-size:12.5px;font-weight:600;color:var(--text)}
 .fs .fr-t{margin-top:10px}
-.fs .ops>label>span{height:58px}
+.fs .ops>label>span{height:auto;padding:9px 6px}
 .fs .ta textarea{min-height:150px}
 .nstep[data-step="3"] .wz-tip{margin-top:12px}
 /* Vérifiez et envoyez */
@@ -870,9 +870,9 @@ button.kc.on{border-color:var(--kc);box-shadow:0 0 0 3px color-mix(in srgb,var(-
 .mdl.n-f .fs{padding:10px 12px 12px}
 .mdl.n-f .fs+.fs{margin-top:8px}
 .mdl.n-f .fs-h{margin-bottom:8px}
-.mdl.n-f .ops{grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
-.mdl.n-f .fs .ops>label>span{height:50px;gap:4px;font-size:11.5px}
-.mdl.n-f .ops .op-l{width:24px;height:24px;font-size:10px}
+.mdl.n-f .ops{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.mdl.n-f .fs .ops>label>span{height:auto;padding:8px 6px;gap:5px;font-size:12px}
+.mdl.n-f .ops .op-l{width:26px;height:26px;font-size:10.5px}
 .mdl.n-f .chs{gap:6px}
 .mdl.n-f .chs span{min-height:30px;padding:4px 12px;font-size:12.5px}
 @media (max-width:640px){.mdl.n-f .ops{grid-template-columns:repeat(3,1fr)}}

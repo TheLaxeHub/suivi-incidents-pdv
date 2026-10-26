@@ -39,7 +39,7 @@
   const MODELES = {
     DEPOT: ["Notre compte a été débité mais le client n'a pas reçu l'argent.", 'Dépôt envoyé sur un mauvais numéro.', "Transaction restée en attente chez l'opérateur."],
     RETRAIT: ["Le client a validé le retrait mais notre compte n'a pas été crédité.", 'Le client a été débité deux fois.', "Retrait en échec mais le client a été débité."],
-    FORMALITE: ["L'usager a payé mais la formalité n'a pas été générée.", 'Le montant débité ne correspond pas à la formalité.', "L'usager a été débité deux fois."],
+    FORMALITE: ["L'usager a payé mais le paiement est resté en attente, non confirmé.", 'Le montant débité ne correspond pas à la formalité.', "L'usager a été débité deux fois."],
   };
   const PAR_PAGE = 50;
   const CLE_SESSION = 'sip_session';
@@ -104,6 +104,8 @@
   const fDate = function (v) { const d = date(v); return d ? p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + d.getFullYear() : '—'; };
   const fHeure = function (v) { const d = date(v); return d ? p2(d.getHours()) + ':' + p2(d.getMinutes()) : ''; };
   const fDateHeure = function (v) { const d = date(v); return d ? fDate(d) + ' ' + fHeure(d) : '—'; };
+  // Date de l'opération : jour seul pour les nouvelles déclarations, avec l'heure pour les anciennes.
+  const fDateOp = function (v) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : fDateHeure(v); };
   const cleJour = function (d) { return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); };
   const heuresDepuis = function (v) { const d = date(v); return d ? (Date.now() - d) / 36e5 : 0; };
   const duree = function (h) {
@@ -1434,9 +1436,9 @@
       ? [it('Incident survenu', esc(i.incident)), it('Formalité voulue', esc(i.formalite)),
         it('N° de liquidation', i.num_liquidation ? '<span class="mono">' + esc(i.num_liquidation) + '</span>' : '', false, i.num_liquidation),
         it('Moyen de paiement', i.operateur ? pastilleOp(i.operateur) : 'Espèces / autre'),
-        it("Date de l'opération", fDateHeure(i.date_operation)), it('Déclaré le', fDateHeure(i.cree_le)),
+        it("Date de l'opération", fDateOp(i.date_operation)), it('Déclaré le', fDateHeure(i.cree_le)),
         it('Déclaré par', esc(declarePar(i)), true)]
-      : [it('Opérateur', pastilleOp(i.operateur)), it("Date de l'opération", fDateHeure(i.date_operation)),
+      : [it('Opérateur', pastilleOp(i.operateur)), it("Date de l'opération", fDateOp(i.date_operation)),
         it('N° client', i.telephone ? '<span class="mono">' + esc(i.telephone) + '</span>' : '', false, i.telephone),
         it('Référence transaction', i.reference ? '<span class="mono">' + esc(i.reference) + '</span>' : '', 2, i.reference),
         it('Déclaré le', fDateHeure(i.cree_le)), it('Déclaré par', esc(declarePar(i)), true)];
@@ -1723,7 +1725,7 @@
   function initDeclaration() {
     $('#nOps').innerHTML = C.OPERATEURS.map(function (o) {
       return '<label style="--opc:' + esc(o.couleur) + '"><input type="radio" name="operateur" value="' + esc(o.code) + '"><span>' + logoOp(o) + '<b>' + esc(o.nom) + '</b></span></label>';
-    }).join('') + '<label class="only-f"><input type="radio" name="operateur" value=""><span><span class="op-l op-cash">' + ico('banknote') + '</span><b>Espèces / autre</b></span></label>';
+    }).join('');
     $('#nIncident').innerHTML = C.INCIDENTS_FORMALITE.map(function (x) { return '<label><input type="radio" name="incident" value="' + esc(x) + '"><span>' + esc(x) + '</span></label>'; }).join('');
 
     $$('#fNew [name=nature]').forEach(function (r) {
@@ -1756,9 +1758,9 @@
       majTicket();
     });
     $('#nQuickDate').addEventListener('click', function (e) {
-      const b = e.target.closest('[data-h]');
+      const b = e.target.closest('[data-j]');
       if (!b) return;
-      $('#nDate').value = dateLocale(new Date(Date.now() - Number(b.dataset.h) * 36e5));
+      $('#nDate').value = cleJour(new Date(Date.now() - Number(b.dataset.j) * 864e5));
       $('#nDate').classList.remove('err');
       majTicket();
     });
@@ -1824,9 +1826,12 @@
       } else {
         exiger(d.operateur, $('#nOps'), "l'opérateur");
       }
+      if (d.categorie === 'FORMALITE') {
+        exiger(d.operateur, $('#nOps'), 'le moyen de paiement');
+      }
       exiger(Number(d.montant) > 0, f.montant, 'le montant');
       exiger(d.date_operation, f.date_operation, "la date de l'opération");
-      if (d.date_operation && new Date(d.date_operation) > new Date(Date.now() + 5 * 6e4)) { manquants.push("une date d'opération passée"); f.date_operation.classList.add('err'); }
+      if (d.date_operation && d.date_operation > cleJour(new Date())) { manquants.push("une date d'opération passée"); f.date_operation.classList.add('err'); }
     }
     if (k === 3) {
       exiger(d.description, f.description, "ce qui s'est passé");
@@ -1894,8 +1899,8 @@
       ? [ligne('Incident', esc(d.incident), 'file-warning'), ligne('Formalité voulue', esc(d.formalite), 'file-text'),
         ligne('N° de liquidation', '<span class="mono">' + esc(d.num_liquidation) + '</span>', 'hash'),
         ligne('Moyen de paiement', d.operateur ? pastilleOp(d.operateur) : 'Espèces / autre', 'wallet'),
-        ligne("Date de l'opération", fDateHeure(d.date_operation), 'calendar-clock')]
-      : [ligne('Opérateur', pastilleOp(d.operateur), 'smartphone'), ligne("Date de l'opération", fDateHeure(d.date_operation), 'calendar-clock'),
+        ligne("Date de l'opération", fDateOp(d.date_operation), 'calendar')]
+      : [ligne('Opérateur', pastilleOp(d.operateur), 'smartphone'), ligne("Date de l'opération", fDateOp(d.date_operation), 'calendar'),
         ligne('N° du client', d.telephone ? '<span class="mono">' + esc(d.telephone) + '</span>' : '', 'phone'),
         ligne('Référence', d.reference ? '<span class="mono">' + esc(d.reference) + '</span>' : '', 'hash')];
     const sousTitreRecap = d.categorie === 'FORMALITE' ? 'Paiement de formalité' : 'Mobile Money · ' + (d.operateur ? operateur(d.operateur).nom : '');
@@ -1936,7 +1941,7 @@
     $('#tkNat').textContent = n ? n.libelle + (d.categorie === 'FORMALITE' && d.incident ? ' · ' + d.incident : '') : 'Nouvel incident';
     $('#tkOp').innerHTML = op ? logoOp(op) + esc(op.nom) : (d.categorie === 'FORMALITE' ? esc(d.formalite || 'Formalité à préciser') : 'Opérateur à choisir');
     $('#tkAmt').textContent = Number(d.montant) > 0 ? nombre(d.montant) : '0';
-    $('#tkDate').textContent = d.date_operation ? fDateHeure(d.date_operation) : '—';
+    $('#tkDate').textContent = d.date_operation ? fDateOp(d.date_operation) : '—';
     const ref = d.categorie === 'FORMALITE' ? d.num_liquidation : d.reference;
     $('#tkRef').textContent = ref || (d.categorie === 'FORMALITE' ? 'N° de liquidation à préciser' : 'Référence à préciser');
     $('#tkRef').classList.toggle('z', !ref);
@@ -1948,12 +1953,9 @@
     $('#mNew').classList.toggle('n-mm', !formalite);
     $('#mNew').classList.toggle('n-f', formalite);
     $('#nTpl').innerHTML = (MODELES[n] || []).map(function (t) { return '<button type="button">' + esc(t) + '</button>'; }).join('');
-    const espece = $('#nOps input[value=""]');
-    if (!formalite && espece.checked) espece.checked = false;
     $('#mNewPdv').textContent = 'Nouvelle déclaration · ' + moi() + ' · ' + NATURES[n].libelle;
   }
 
-  function dateLocale(d) { return cleJour(d) + 'T' + p2(d.getHours()) + ':' + p2(d.getMinutes()); }
 
   /* Brouillon conservé si l'assistant est fermé avant l'envoi. */
   function sauverBrouillon() {
@@ -1982,8 +1984,8 @@
     $$('.err', f).forEach(function (x) { x.classList.remove('err'); });
     $('#mNew').classList.remove('n-mm', 'n-f');
     $('#mNewPdv').textContent = 'Nouvelle déclaration · ' + moi();
-    $('#nDate').value = dateLocale(new Date());
-    $('#nDate').max = dateLocale(new Date(Date.now() + 5 * 6e4));
+    $('#nDate').value = cleJour(new Date());
+    $('#nDate').max = cleJour(new Date());
     $('#nDraft').innerHTML = '';
     $('#nDescN').textContent = '0 / 2000';
     incidentCree = null;
@@ -2066,7 +2068,7 @@
     XLSX.utils.book_append_sheet(wb, feuille(lignes.map(function (i) {
       return {
         'N°': i.id, 'Point de vente': i.pdv, 'Nature': NATURES[nature(i)] ? NATURES[nature(i)].libelle : '',
-        'Opérateur': opNom(i.operateur), "Date de l'opération": fDateHeure(i.date_operation), 'Montant (FCFA)': Number(i.montant) || 0,
+        'Opérateur': opNom(i.operateur), "Date de l'opération": fDateOp(i.date_operation), 'Montant (FCFA)': Number(i.montant) || 0,
         'N° client': i.telephone, 'Référence transaction': i.reference, 'Incident (formalité)': i.incident,
         'N° liquidation': i.num_liquidation, 'Formalité voulue': i.formalite, "Ce qui s'est passé": i.description,
         'Solution demandée': i.solution, 'État': ETATS[etat(i)].libelle, 'Dernière action': i.derniere_action,
