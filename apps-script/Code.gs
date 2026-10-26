@@ -12,7 +12,10 @@
  * Onglets créés :
  *   - Incidents : une ligne par incident déclaré.
  *   - Actions   : historique des actions (Back Office et compléments des PDV).
- *   - Acces     : un code d'accès facultatif par profil (vide = pas de code).
+ *   - Acces     : un code d'accès facultatif par point de vente (vide = pas de code).
+ *
+ * Le Back Office se connecte par code à usage unique (OTP) envoyé par e-mail :
+ * seuls les agents de BO_UTILISATEURS peuvent le recevoir.
  */
 
 const BACK_OFFICE = 'BACK OFFICE';
@@ -23,6 +26,21 @@ const POINTS_DE_VENTE = [
   'FOURRIERE ABOBO', 'FOURRIERE BASSAM', 'GUIGLO', 'KONG', 'MANKONO', 'KATIOLA',
   'ODIENNE', 'PHB', 'SASSANDRA', 'SEGUELA', 'TOUBA', 'SIEGE', 'VGE', 'YOPOUGON',
 ];
+
+// Agents du Back Office autorisés à recevoir un code de connexion (à garder identique à
+// BO_UTILISATEURS dans assets/js/config.js).
+const BO_UTILISATEURS = [
+  { nom: 'Anne Adjo', poste: 'Opérateur', email: 'anne.niamkoun@cgi.ci' },
+  { nom: 'Aminata Sow', poste: 'Assistant', email: 'aminata.sow@cgi.ci' },
+  { nom: 'Axel Kouamenan', poste: 'Chef', email: 'axel.kouamenan@cgi.ci' },
+  { nom: 'Zeinab Kone', poste: 'Responsable', email: 'zeinab.kone@cgi.ci' },
+  { nom: 'Issa Kone', poste: 'Manager', email: 'issa.kone@cgi.ci' },
+  { nom: 'Jansenus Koffi', poste: 'Manager', email: 'jansenus.koffi@cgi.ci' },
+];
+const OTP_SECONDES = 5 * 60;          // validité du code envoyé par e-mail
+const OTP_ESSAIS = 5;                 // essais avant invalidation du code
+const OTP_DELAI_RENVOI = 45;          // secondes minimum entre deux envois
+const SESSION_HEURES = 12;            // durée d'une session Back Office
 
 // À garder identique à ACTIONS_BO dans assets/js/config.js.
 const ACTIONS = {
@@ -72,6 +90,7 @@ function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   PropertiesService.getScriptProperties().setProperty('SHEET_ID', ss.getId());
   base_();
+  MailApp.getRemainingDailyQuota(); // demande l'autorisation d'envoyer les codes par e-mail
   Logger.log('Onglets prêts. Déployez maintenant le script en Application Web.');
 }
 
@@ -80,10 +99,15 @@ function setup() {
 /* ------------------------------------------------------------------ */
 
 function route_(req) {
-  const sess = auth_(req.profil, req.code);
+  // Connexion du Back Office par code à usage unique : avant toute authentification.
+  if (req.action === 'otpSend') return envoyerOtp_(req.email);
+  if (req.action === 'otpVerify') return verifierOtp_(req.email, req.otp);
+  if (req.action === 'logout') { if (req.token) props_().deleteProperty(cleJeton_(req.token)); return { ok: true }; }
+
+  const sess = auth_(req.profil, req.code, req.token);
   switch (req.action) {
     case 'login':
-      return { ok: true, profil: sess.profil, isBO: sess.isBO };
+      return { ok: true, profil: sess.profil, isBO: sess.isBO, user: sess.user || null };
     case 'list':
       return Object.assign({ ok: true }, lister_(sess));
     case 'create':
@@ -95,9 +119,14 @@ function route_(req) {
   }
 }
 
-function auth_(profil, code) {
+function auth_(profil, code, token) {
   const p = String(profil || '').trim().toUpperCase();
   if (!p) throw erreur_('PROFIL_INCONNU', 'Profil manquant.');
+  if (p === BACK_OFFICE) {
+    const user = lireJeton_(token);
+    if (!user) throw erreur_('SESSION_EXPIREE', 'Session Back Office expirée, reconnectez-vous.');
+    return { profil: p, isBO: true, user: user, agent: user.nom };
+  }
   const acces = base_().acces.getDataRange().getValues().slice(1);
   const ligne = acces.find(function (r) { return String(r[0]).trim().toUpperCase() === p; });
   if (!ligne) throw erreur_('PROFIL_INCONNU', 'Profil « ' + p + ' » inconnu.');
@@ -107,6 +136,96 @@ function auth_(profil, code) {
     if (String(code).trim() !== attendu) throw erreur_('CODE_INVALIDE', "Code d'accès incorrect.");
   }
   return { profil: p, isBO: p === BACK_OFFICE };
+}
+
+/* ------------------------------------------------------------------ */
+/* Connexion Back Office : code à usage unique par e-mail              */
+/* ------------------------------------------------------------------ */
+
+function agentBo_(email) {
+  const e = String(email || '').trim().toLowerCase();
+  const u = BO_UTILISATEURS.find(function (x) { return x.email.toLowerCase() === e; });
+  if (!u) throw erreur_('AGENT_INCONNU', "Cet agent n'est pas autorisé au Back Office.");
+  return u;
+}
+
+function envoyerOtp_(email) {
+  const u = agentBo_(email);
+  const cache = CacheService.getScriptCache();
+  const k = u.email.toLowerCase();
+  if (cache.get('OTPW_' + k)) throw erreur_('OTP_TROP_TOT', "Un code vient d'être envoyé. Patientez quelques secondes avant d'en demander un autre.");
+  // Tirage à partir d'un UUID (aléa cryptographique), plutôt que Math.random.
+  const code = ('000000' + (parseInt(hash_(Utilities.getUuid()).slice(0, 12), 16) % 1e6)).slice(-6);
+  cache.put('OTP_' + k, JSON.stringify({ h: hash_(code), n: 0 }), OTP_SECONDES);
+  cache.put('OTPW_' + k, '1', OTP_DELAI_RENVOI);
+  const minutes = Math.round(OTP_SECONDES / 60);
+  MailApp.sendEmail({
+    to: u.email,
+    name: 'Suivi des incidents PDV',
+    subject: 'Votre code de connexion : ' + code,
+    body: 'Bonjour ' + u.nom + ',\n\nVotre code de connexion au Back Office est : ' + code +
+      '\nIl est valable ' + minutes + " minutes.\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez ce message.",
+    htmlBody:
+      '<div style="font-family:Segoe UI,Arial,sans-serif;max-width:460px;margin:auto;padding:28px;border:1px solid #e3e8f0;border-radius:16px">' +
+      '<p style="margin:0 0 6px;color:#64748b;font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700">Back Office · Incidents de paiement</p>' +
+      '<h2 style="margin:0 0 16px;color:#0d1526">Bonjour ' + u.nom + ',</h2>' +
+      '<p style="color:#334155;margin:0 0 18px">Voici votre code de connexion :</p>' +
+      '<p style="font-size:34px;letter-spacing:10px;font-weight:800;color:#1d4ed8;background:#e8efff;border-radius:12px;padding:14px 0;text-align:center;margin:0 0 18px">' + code + '</p>' +
+      '<p style="color:#64748b;font-size:13px;margin:0">Valable <b>' + minutes + " minutes</b>, utilisable une seule fois. Si vous n'êtes pas à l'origine de cette demande, ignorez ce message.</p></div>",
+  });
+  return { ok: true, email: u.email, expire: OTP_SECONDES };
+}
+
+function verifierOtp_(email, otp) {
+  const u = agentBo_(email);
+  const cache = CacheService.getScriptCache();
+  const k = u.email.toLowerCase();
+  const brut = cache.get('OTP_' + k);
+  if (!brut) throw erreur_('OTP_EXPIRE', 'Code expiré ou inexistant. Demandez un nouveau code.');
+  const o = JSON.parse(brut);
+  if (o.h !== hash_(String(otp || '').trim())) {
+    o.n += 1;
+    if (o.n >= OTP_ESSAIS) {
+      cache.remove('OTP_' + k);
+      throw erreur_('OTP_EXPIRE', "Trop d'essais incorrects. Demandez un nouveau code.");
+    }
+    cache.put('OTP_' + k, JSON.stringify(o), OTP_SECONDES);
+    throw erreur_('OTP_INVALIDE', 'Code incorrect (' + (OTP_ESSAIS - o.n) + ' essai(s) restant(s)).');
+  }
+  cache.remove('OTP_' + k);
+  nettoyerJetons_();
+  const token = Utilities.getUuid() + Utilities.getUuid();
+  const user = { nom: u.nom, poste: u.poste, email: u.email };
+  props_().setProperty(cleJeton_(token), JSON.stringify({ u: user, exp: Date.now() + SESSION_HEURES * 36e5 }));
+  return { ok: true, token: token, profil: BACK_OFFICE, isBO: true, user: user };
+}
+
+function lireJeton_(token) {
+  if (!token) return null;
+  const brut = props_().getProperty(cleJeton_(token));
+  if (!brut) return null;
+  const t = JSON.parse(brut);
+  if (t.exp < Date.now()) { props_().deleteProperty(cleJeton_(token)); return null; }
+  // Un agent retiré de la liste perd l'accès immédiatement.
+  const actif = BO_UTILISATEURS.some(function (x) { return x.email.toLowerCase() === t.u.email.toLowerCase(); });
+  return actif ? t.u : null;
+}
+
+function nettoyerJetons_() {
+  const p = props_();
+  const tout = p.getProperties();
+  Object.keys(tout).forEach(function (k) {
+    if (k.indexOf('TOK_') !== 0) return;
+    try { if (JSON.parse(tout[k]).exp < Date.now()) p.deleteProperty(k); } catch (e) { p.deleteProperty(k); }
+  });
+}
+
+function cleJeton_(token) { return 'TOK_' + hash_(token); }
+function props_() { return PropertiesService.getScriptProperties(); }
+
+function hash_(s) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(s), Utilities.Charset.UTF_8)
+    .map(function (b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('');
 }
 
 /* ------------------------------------------------------------------ */
@@ -151,8 +270,8 @@ function ajouterAction_(sess, data) {
   if (COMMENTAIRE_OBLIGATOIRE.indexOf(code) >= 0 && !commentaire) {
     throw erreur_('VALIDATION', 'Un commentaire est obligatoire pour cette action.');
   }
-  // Un point de vente agit en son nom ; seul le Back Office indique l'agent.
-  const agent = texte_(data.agent, 80) || (sess.isBO ? '' : sess.profil);
+  // Un point de vente agit en son nom ; l'agent Back Office est celui de la session.
+  const agent = sess.agent || texte_(data.agent, 80) || (sess.isBO ? '' : sess.profil);
   if (!agent) throw erreur_('VALIDATION', "Indiquez le nom de l'agent.");
 
   return verrou_(function () {

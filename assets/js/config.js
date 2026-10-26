@@ -12,6 +12,18 @@ window.APP_CONFIG = {
 
   BACK_OFFICE: 'BACK OFFICE',
 
+  // Agents du Back Office : chacun se connecte avec un code reçu par e-mail.
+  // À garder identique à BO_UTILISATEURS dans apps-script/Code.gs.
+  BO_UTILISATEURS: [
+    { nom: 'Anne Adjo', poste: 'Opérateur', email: 'anne.niamkoun@cgi.ci' },
+    { nom: 'Aminata Sow', poste: 'Assistant', email: 'aminata.sow@cgi.ci' },
+    { nom: 'Axel Kouamenan', poste: 'Chef', email: 'axel.kouamenan@cgi.ci' },
+    { nom: 'Zeinab Kone', poste: 'Responsable', email: 'zeinab.kone@cgi.ci' },
+    { nom: 'Issa Kone', poste: 'Manager', email: 'issa.kone@cgi.ci' },
+    { nom: 'Jansenus Koffi', poste: 'Manager', email: 'jansenus.koffi@cgi.ci' },
+  ],
+  OTP_MINUTES: 5,                 // validité du code de connexion envoyé par e-mail
+
   POINTS_DE_VENTE: [
     'ABOBO', 'ABOISSO', 'AGBOVILLE', 'ANGRE', 'BONDOUKOU', 'BONGOUANOU', 'BOUAKE',
     'BOUNA', 'BOUNDIALI', 'COSMOS', 'DAOUKRO', 'DIMBOKRO', 'DIVO', 'FERKE',

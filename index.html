@@ -9,7 +9,7 @@
 <link rel="icon" type="image/png" href="assets/img/logo-qfs.png">
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800|jetbrains-mono:500" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=20261026c">
 <script>
   // Thème appliqué avant l'affichage pour éviter un flash.
   try { const t = localStorage.getItem('sip_theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) { /* stockage indisponible */ }
@@ -23,18 +23,19 @@
 <!-- ================= CONNEXION ================= -->
 <section class="lg" id="login" hidden>
   <div class="lg-side">
+    <div class="lg-grid-bg" aria-hidden="true"></div>
     <div class="lg-brand"><span class="lg-logo"><img src="assets/img/logo-qfs.png" alt="Quipux Financial Services"></span></div>
     <div class="lg-pitch">
-      <p class="lg-kick">E-Money · Incidents de paiement</p>
+      <p class="lg-kick"><span class="lg-dot"></span>E-Money · Incidents de paiement</p>
       <h1 class="lg-t" data-cfg="APP_TITRE"></h1>
       <p class="lg-s" data-cfg="APP_SOUS_TITRE"></p>
       <ol class="lg-flow">
-        <li><span><i data-lucide="send"></i></span><div><b>Le point de vente déclare</b>en 4 étapes guidées, en moins d'une minute</div></li>
+        <li><span><i data-lucide="send"></i></span><div><b>Le point de vente déclare</b>4 étapes guidées, moins d'une minute</div></li>
         <li><span><i data-lucide="workflow"></i></span><div><b>Le Back Office traite</b>prise en charge, CA, relance opérateur…</div></li>
         <li><span><i data-lucide="bell-ring"></i></span><div><b>Chacun suit en temps réel</b>chaque action est visible des deux côtés</div></li>
       </ol>
     </div>
-    <p class="lg-foot">Quipux Financial Services</p>
+    <p class="lg-foot"><i data-lucide="shield-check"></i>Quipux Financial Services · accès sécurisé</p>
   </div>
 
   <div class="lg-main">
@@ -45,25 +46,25 @@
       </div>
 
       <div id="lgStep1">
-        <h2 class="lg-q">Connexion</h2>
-        <p class="lg-h">Choisissez votre espace de travail.</p>
+        <div class="lg-head">
+          <div><h2 class="lg-q">Bienvenue</h2><p class="lg-h">Choisissez votre espace pour vous connecter.</p></div>
+        </div>
 
-        <div class="seg lg-role" role="tablist">
-          <button type="button" role="tab" data-role="pdv" class="on"><i data-lucide="store"></i>Point de vente</button>
-          <button type="button" role="tab" data-role="bo"><i data-lucide="shield-check"></i>Back Office</button>
+        <div class="lg-role" role="tablist">
+          <button type="button" role="tab" data-role="pdv" class="on"><i data-lucide="store"></i><span>Point de vente<small>Déclarer et suivre</small></span></button>
+          <button type="button" role="tab" data-role="bo"><i data-lucide="shield-check"></i><span>Back Office<small>Traiter et piloter</small></span></button>
         </div>
 
         <div id="lgPdvPane">
-          <div class="lg-recent" id="lgRecent" hidden></div>
-          <div class="sbx"><i data-lucide="search" class="si"></i><input id="lgSearch" type="search" placeholder="Rechercher votre point de vente…" autocomplete="off" aria-label="Rechercher un point de vente"></div>
+          <div class="lg-tools">
+            <div class="sbx"><i data-lucide="search" class="si"></i><input id="lgSearch" type="search" placeholder="Rechercher votre point de vente…" autocomplete="off" aria-label="Rechercher un point de vente"></div>
+            <div class="lg-recent" id="lgRecent" hidden></div>
+          </div>
           <div class="lg-grid" id="lgGrid"></div>
         </div>
         <div id="lgBoPane" hidden>
-          <button type="button" class="lg-bo" id="lgBo">
-            <span class="lg-bo-i"><i data-lucide="shield-check"></i></span>
-            <span class="lg-bo-t">Back Office<small>Traitement des incidents et pilotage de tous les points de vente</small></span>
-            <i data-lucide="arrow-right" class="lg-bo-a"></i>
-          </button>
+          <p class="lg-sec"><i data-lucide="mail"></i><span>Cliquez sur votre nom : un code valable <b data-cfg="OTP_MINUTES"></b> minutes vous est envoyé par e-mail.</span></p>
+          <div class="lg-users" id="lgUsers"></div>
         </div>
       </div>
 
@@ -73,6 +74,21 @@
         <label class="fl" for="lgCode">Code d'accès</label>
         <div class="pw"><input class="in" id="lgCode" type="password" autocomplete="current-password" required><button type="button" class="ibtn" id="lgEye" aria-label="Afficher le code"><i data-lucide="eye"></i></button></div>
         <button class="btn bp btn-lg" type="submit"><i data-lucide="log-in"></i>Se connecter</button>
+      </form>
+
+      <form id="lgOtp" hidden novalidate>
+        <button type="button" class="lnk" id="lgOtpBack"><i data-lucide="arrow-left"></i>Changer d'agent</button>
+        <div class="otp-head">
+          <div class="otp-ring" id="otpRing"><svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="19"></circle><circle cx="22" cy="22" r="19" id="otpArc"></circle></svg><span id="otpTime">5:00</span></div>
+          <div><h2 class="lg-q">Vérifiez vos e-mails</h2><p class="lg-h">Code à 6 chiffres envoyé à <b id="otpMail"></b></p></div>
+        </div>
+        <div class="otp-who"><span class="av av-lg bo" id="otpAv"></span><div><b id="otpNom"></b><small id="otpPoste"></small></div></div>
+        <div class="otp-in" id="otpIn">
+          <input inputmode="numeric" autocomplete="one-time-code" aria-label="Chiffre 1"><input inputmode="numeric" aria-label="Chiffre 2"><input inputmode="numeric" aria-label="Chiffre 3"><span></span><input inputmode="numeric" aria-label="Chiffre 4"><input inputmode="numeric" aria-label="Chiffre 5"><input inputmode="numeric" aria-label="Chiffre 6">
+        </div>
+        <div class="otp-demo" id="otpDemo" hidden></div>
+        <button class="btn bp btn-lg" type="submit" id="otpGo"><i data-lucide="log-in"></i>Se connecter</button>
+        <p class="otp-re"><span id="otpReTxt">Pas reçu ?</span> <button type="button" class="lnk" id="otpRe"><i data-lucide="rotate-ccw"></i>Renvoyer le code</button></p>
       </form>
 
       <div class="msg err" id="lgErr" role="alert" hidden></div>
@@ -133,94 +149,110 @@
 
 <!-- ================= NOUVELLE DÉCLARATION ================= -->
 <div class="mdl" id="mNew" hidden role="dialog" aria-modal="true" aria-labelledby="mNewTitle">
-  <form class="mdl-box" id="fNew" novalidate>
-    <div class="mdl-h">
-      <div>
-        <p class="eyebrow" id="mNewPdv"></p>
-        <h2 class="mdl-t" id="mNewTitle"></h2>
+  <form class="mdl-box wz" id="fNew" novalidate>
+    <aside class="wz-side">
+      <div class="wz-side-top">
+        <p class="wz-kick" id="mNewPdv"></p>
+        <p class="wz-side-t">Déclarer un incident</p>
       </div>
-      <button type="button" class="ibtn" data-close aria-label="Fermer"><i data-lucide="x"></i></button>
-    </div>
-    <div class="wz-bar"><div class="wz-fill" id="wzFill"></div></div>
-    <ol class="stp" id="nSteps">
-      <li data-step="1"><span class="stp-n">1</span><span class="stp-l">Type</span></li>
-      <li data-step="2"><span class="stp-n">2</span><span class="stp-l">Opération</span></li>
-      <li data-step="3"><span class="stp-n">3</span><span class="stp-l">Explication</span></li>
-      <li data-step="4"><span class="stp-n">4</span><span class="stp-l">Envoi</span></li>
-    </ol>
+      <ol class="stp" id="nSteps">
+        <li data-step="1"><span class="stp-n">1</span><span class="stp-l">Type<small>Dépôt, retrait, formalité</small></span></li>
+        <li data-step="2"><span class="stp-n">2</span><span class="stp-l">Opération<small>Montant, date, références</small></span></li>
+        <li data-step="3"><span class="stp-n">3</span><span class="stp-l">Explication<small>Ce qui s'est passé</small></span></li>
+        <li data-step="4"><span class="stp-n">4</span><span class="stp-l">Envoi<small>Vérification finale</small></span></li>
+      </ol>
+      <div class="tk" id="nLive">
+        <div class="tk-h"><span class="tk-i" id="tkIco"><i data-lucide="receipt"></i></span><div><small id="tkNat">Nouvel incident</small><b id="tkOp">—</b></div></div>
+        <div class="tk-amt"><span id="tkAmt">0</span><small>FCFA</small></div>
+        <div class="tk-row"><i data-lucide="calendar-clock"></i><span id="tkDate">—</span></div>
+        <div class="tk-row"><i data-lucide="hash"></i><span id="tkRef">Référence à préciser</span></div>
+      </div>
+    </aside>
 
-    <div class="mdl-bd">
-      <section class="nstep" data-step="1">
-        <p class="nstep-h">Quel type de paiement pose problème ?</p>
-        <div class="nat">
-          <label><input type="radio" name="nature" value="DEPOT"><span><i data-lucide="arrow-down-to-line"></i><b>Dépôt</b><small>Mobile Money — le client dépose de l'argent</small></span></label>
-          <label><input type="radio" name="nature" value="RETRAIT"><span><i data-lucide="arrow-up-from-line"></i><b>Retrait</b><small>Mobile Money — le client retire de l'argent</small></span></label>
-          <label><input type="radio" name="nature" value="FORMALITE"><span><i data-lucide="file-text"></i><b>Formalité</b><small>Débit à tort, double débit, formalité non générée…</small></span></label>
+    <div class="wz-main">
+      <div class="mdl-h">
+        <div>
+          <p class="eyebrow" id="wzStepLbl">Étape 1 sur 4</p>
+          <h2 class="mdl-t" id="mNewTitle"></h2>
         </div>
-      </section>
+        <button type="button" class="ibtn" data-close aria-label="Fermer"><i data-lucide="x"></i></button>
+      </div>
+      <div class="wz-bar"><div class="wz-fill" id="wzFill"></div></div>
 
-      <section class="nstep" data-step="2" hidden>
-        <div class="only-f">
-          <label class="fl">Incident survenu *</label>
-          <div class="chs" id="nIncident" data-name="incident"></div>
-        </div>
-        <div class="only-f fr">
-          <div class="fcol"><label class="fl" for="nLiq">N° de liquidation *</label><input class="in mono" id="nLiq" name="num_liquidation" autocomplete="off"></div>
-          <div class="fcol"><label class="fl" for="nFormalite">Formalité voulue *</label><input class="in" id="nFormalite" name="formalite" list="dlFormalites" autocomplete="off" placeholder="Ex. : carte grise"><datalist id="dlFormalites"></datalist></div>
-        </div>
-
-        <label class="fl"><span class="only-mm">Opérateur *</span><span class="only-f">Moyen de paiement utilisé (facultatif)</span></label>
-        <div class="ops" id="nOps"></div>
-
-        <div class="fr">
-          <div class="fcol">
-            <label class="fl" for="nMontant">Montant *</label>
-            <div class="amt-in"><input class="in" id="nMontant" name="montant" inputmode="numeric" autocomplete="off" placeholder="0"><span>FCFA</span></div>
+      <div class="mdl-bd">
+        <section class="nstep" data-step="1">
+          <p class="nstep-h">Sélectionnez le type de paiement qui pose problème.</p>
+          <div class="nat">
+            <label><input type="radio" name="nature" value="DEPOT"><span class="n-DEPOT"><i data-lucide="arrow-down-to-line"></i><b>Dépôt</b><small>Mobile Money — le client dépose de l'argent</small><em>Choisir<i data-lucide="arrow-right"></i></em></span></label>
+            <label><input type="radio" name="nature" value="RETRAIT"><span class="n-RETRAIT"><i data-lucide="arrow-up-from-line"></i><b>Retrait</b><small>Mobile Money — le client retire de l'argent</small><em>Choisir<i data-lucide="arrow-right"></i></em></span></label>
+            <label><input type="radio" name="nature" value="FORMALITE"><span class="n-FORMALITE"><i data-lucide="file-text"></i><b>Formalité</b><small>Débit à tort, double débit, formalité non générée…</small><em>Choisir<i data-lucide="arrow-right"></i></em></span></label>
           </div>
-          <div class="fcol">
-            <label class="fl" for="nDate">Date et heure de l'opération *</label>
-            <input class="in" id="nDate" name="date_operation" type="datetime-local">
-            <div class="qd" id="nQuickDate">
-              <button type="button" data-h="0">Maintenant</button><button type="button" data-h="1">Il y a 1 h</button><button type="button" data-h="3">Il y a 3 h</button><button type="button" data-h="24">Hier</button>
+          <div class="wz-tip"><i data-lucide="lightbulb"></i><span>Astuce : gardez la <b>référence de la transaction</b> ou le <b>n° de liquidation</b> sous la main, le traitement sera beaucoup plus rapide.</span></div>
+        </section>
+
+        <section class="nstep" data-step="2" hidden>
+          <div class="only-f">
+            <label class="fl">Incident survenu *</label>
+            <div class="chs" id="nIncident" data-name="incident"></div>
+          </div>
+          <div class="only-f fr">
+            <div class="fcol"><label class="fl" for="nLiq">N° de liquidation *</label><div class="ix"><i data-lucide="hash"></i><input class="in mono" id="nLiq" name="num_liquidation" autocomplete="off" placeholder="LQ0000000"></div></div>
+            <div class="fcol"><label class="fl" for="nFormalite">Formalité voulue *</label><div class="ix"><i data-lucide="file-text"></i><input class="in" id="nFormalite" name="formalite" list="dlFormalites" autocomplete="off" placeholder="Ex. : carte grise"></div><datalist id="dlFormalites"></datalist></div>
+          </div>
+
+          <label class="fl"><span class="only-mm">Opérateur *</span><span class="only-f">Moyen de paiement utilisé (facultatif)</span></label>
+          <div class="ops" id="nOps"></div>
+
+          <div class="fr">
+            <div class="fcol">
+              <label class="fl" for="nMontant">Montant *</label>
+              <div class="amt-in"><input class="in" id="nMontant" name="montant" inputmode="numeric" autocomplete="off" placeholder="0"><span>FCFA</span></div>
+            </div>
+            <div class="fcol">
+              <label class="fl" for="nDate">Date et heure de l'opération *</label>
+              <input class="in" id="nDate" name="date_operation" type="datetime-local">
+              <div class="qd" id="nQuickDate">
+                <button type="button" data-h="0">Maintenant</button><button type="button" data-h="1">Il y a 1 h</button><button type="button" data-h="3">Il y a 3 h</button><button type="button" data-h="24">Hier</button>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="only-mm fr">
-          <div class="fcol"><label class="fl" for="nTel">N° de téléphone / compte du client</label><input class="in mono" id="nTel" name="telephone" inputmode="tel" autocomplete="off" placeholder="07 00 00 00 00"></div>
-          <div class="fcol"><label class="fl" for="nRef">Référence / ID de la transaction</label><input class="in mono" id="nRef" name="reference" autocomplete="off"><p class="hint">Fortement conseillé : accélère le traitement.</p></div>
-        </div>
-      </section>
+          <div class="only-mm fr">
+            <div class="fcol"><label class="fl" for="nTel">N° de téléphone / compte du client</label><div class="ix"><i data-lucide="smartphone"></i><input class="in mono" id="nTel" name="telephone" inputmode="tel" autocomplete="off" placeholder="07 00 00 00 00"></div></div>
+            <div class="fcol"><label class="fl" for="nRef">Référence / ID de la transaction <span class="rec">conseillé</span></label><div class="ix"><i data-lucide="hash"></i><input class="in mono" id="nRef" name="reference" autocomplete="off" placeholder="Ex. : MP240101.1234.A12345"></div></div>
+          </div>
+        </section>
 
-      <section class="nstep" data-step="3" hidden>
-        <label class="fl" for="nDesc">Expliquez ce qui s'est passé *</label>
-        <div class="tpl" id="nTpl"></div>
-        <textarea class="in" id="nDesc" name="description" rows="4" placeholder="Décrivez l'incident en quelques mots…"></textarea>
-        <label class="fl">Solution demandée *</label>
-        <div class="chs" id="nSolution" data-name="solution"></div>
-      </section>
+        <section class="nstep" data-step="3" hidden>
+          <label class="fl" for="nDesc">Expliquez ce qui s'est passé *</label>
+          <div class="tpl" id="nTpl"></div>
+          <div class="ta"><textarea class="in" id="nDesc" name="description" rows="4" maxlength="2000" placeholder="Décrivez l'incident en quelques mots…"></textarea><span class="ta-n" id="nDescN">0 / 2000</span></div>
+          <label class="fl">Solution demandée *</label>
+          <div class="chs" id="nSolution" data-name="solution"></div>
+        </section>
 
-      <section class="nstep" data-step="4" hidden>
-        <div class="msg warn" id="nDup" hidden></div>
-        <div class="recap" id="nRecap"></div>
-      </section>
+        <section class="nstep" data-step="4" hidden>
+          <div class="msg warn" id="nDup" hidden></div>
+          <div class="recap" id="nRecap"></div>
+        </section>
 
-      <section class="nstep nstep-ok" data-step="5" hidden>
-        <div class="ok-ico"><i data-lucide="check"></i></div>
-        <h3>Déclaration envoyée</h3>
-        <p>L'incident <b class="mono" id="nOkId"></b> a été transmis au Back Office.<br>Vous serez informé ici à chaque étape du traitement.</p>
-        <div class="ok-act">
-          <button type="button" class="btn bp" id="nOkView"><i data-lucide="eye"></i>Suivre cet incident</button>
-          <button type="button" class="btn bo" id="nOkAgain"><i data-lucide="plus"></i>Déclarer un autre incident</button>
-        </div>
-      </section>
+        <section class="nstep nstep-ok" data-step="5" hidden>
+          <div class="ok-ico"><i data-lucide="check"></i></div>
+          <h3>Déclaration envoyée</h3>
+          <p>L'incident <b class="mono" id="nOkId"></b> a été transmis au Back Office.<br>Vous serez informé ici à chaque étape du traitement.</p>
+          <div class="ok-act">
+            <button type="button" class="btn bp" id="nOkView"><i data-lucide="eye"></i>Suivre cet incident</button>
+            <button type="button" class="btn bo" id="nOkAgain"><i data-lucide="plus"></i>Déclarer un autre incident</button>
+          </div>
+        </section>
 
-      <div class="msg err" id="nErr" role="alert" hidden></div>
-    </div>
-    <div class="mdl-ft">
-      <span class="draft" id="nDraft"></span>
-      <button type="button" class="btn bo" id="nPrev"></button>
-      <button type="button" class="btn bp" id="nNext">Continuer<i data-lucide="arrow-right"></i></button>
-      <button type="submit" class="btn bp" id="nSubmit"><i data-lucide="send"></i>Envoyer au Back Office</button>
+        <div class="msg err" id="nErr" role="alert" hidden></div>
+      </div>
+      <div class="mdl-ft">
+        <span class="draft" id="nDraft"></span>
+        <button type="button" class="btn bo" id="nPrev"></button>
+        <button type="button" class="btn bp" id="nNext">Continuer<i data-lucide="arrow-right"></i></button>
+        <button type="submit" class="btn bp" id="nSubmit"><i data-lucide="send"></i>Envoyer au Back Office</button>
+      </div>
     </div>
   </form>
 </div>
@@ -236,8 +268,8 @@
 <div class="ld" id="loader" hidden><div class="ld-s"></div></div>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
-<script src="assets/js/config.js"></script>
-<script src="assets/js/store.js"></script>
-<script src="assets/js/app.js"></script>
+<script src="assets/js/config.js?v=20261026c"></script>
+<script src="assets/js/store.js?v=20261026c"></script>
+<script src="assets/js/app.js?v=20261026c"></script>
 </body>
 </html>

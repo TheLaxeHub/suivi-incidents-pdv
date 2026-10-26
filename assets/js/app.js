@@ -32,6 +32,10 @@
     TERMINE: 'circle-check', REJETE: 'circle-x', COMPLEMENT: 'reply',
   };
   const AVEC_REFERENCE = ['CREATION_CA', 'DEMANDE_REGULARISATION', 'RELANCE'];
+  const COURTS_ACTION = {
+    PRISE_EN_CHARGE: 'Prise en charge', CREATION_CA: 'Création CA', DEMANDE_REGULARISATION: 'Régularisation', RELANCE: 'Relance opérateur',
+    INFO_PDV: 'Info au PDV', COMMENTAIRE: 'Commentaire', TERMINE: 'Résolue', REJETE: 'Rejetée',
+  };
   const MODELES = {
     DEPOT: ["Notre compte a été débité mais le client n'a pas reçu l'argent.", 'Dépôt envoyé sur un mauvais numéro.', "Transaction restée en attente chez l'opérateur."],
     RETRAIT: ["Le client a validé le retrait mais notre compte n'a pas été crédité.", 'Le client a été débité deux fois.', "Retrait en échec mais le client a été débité."],
@@ -230,6 +234,15 @@
     document.title = C.APP_TITRE + ' — QFS';
     $('#lgConf').hidden = Store.configure;
     dessinerGrille('');
+    dessinerAgents();
+    $('#lgUsers').addEventListener('click', function (e) {
+      const b = e.target.closest('[data-email]');
+      if (b) demanderOtp(b.dataset.email, b);
+    });
+    $('#lgOtpBack').addEventListener('click', function () { etapeConnexion(1); role('bo'); });
+    $('#lgOtp').addEventListener('submit', function (e) { e.preventDefault(); validerOtp(); });
+    $('#otpRe').addEventListener('click', function () { demanderOtp(otp.email, null, true); });
+    initSaisieOtp();
     $('#lgSearch').addEventListener('input', function (e) { dessinerGrille(e.target.value); });
     $('#lgSearch').addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
@@ -247,7 +260,6 @@
     $$('.lg-role button').forEach(function (b) {
       b.addEventListener('click', function () { role(b.dataset.role); });
     });
-    $('#lgBo').addEventListener('click', function () { choisirProfil(BO); });
     $('#lgBack').addEventListener('click', function () { etapeConnexion(1); });
     $('#lgEye').addEventListener('click', function () {
       const c = $('#lgCode');
@@ -273,9 +285,135 @@
     const pdvs = C.POINTS_DE_VENTE.filter(function (p) { return !n || sansAccents(p).includes(n); });
     $('#lgGrid').innerHTML = pdvs.length
       ? pdvs.map(function (p) {
-        return '<button type="button" class="lg-pdv" data-pdv="' + esc(p) + '"><span class="lg-pin">' + esc(p.charAt(0)) + '</span>' + esc(p) + '</button>';
+        return '<button type="button" class="lg-pdv" data-pdv="' + esc(p) + '" title="' + esc(p) + '"><span class="lg-pin">' + esc(p.charAt(0)) + '</span>' + esc(p) + '</button>';
       }).join('')
       : '<div class="lg-none">Aucun point de vente ne correspond.</div>';
+  }
+
+  const initiales = function (nom) { return nom.split(/\s+/).map(function (m) { return m.charAt(0); }).join('').slice(0, 2).toUpperCase(); };
+  const masquerEmail = function (e) { const m = e.split('@'); return m[0].slice(0, 2) + '•••' + m[0].slice(-1) + '@' + m[1]; };
+
+  function dessinerAgents() {
+    $('#lgUsers').innerHTML = (C.BO_UTILISATEURS || []).map(function (u, k) {
+      return '<button type="button" class="lg-user" data-email="' + esc(u.email) + '" style="--k:' + k + '">' +
+        '<span class="av av-u">' + esc(initiales(u.nom)) + '</span>' +
+        '<span class="lg-user-t"><b>' + esc(u.nom) + '</b><small>' + esc(u.email) + '</small></span>' +
+        '<span class="lg-poste">' + esc(u.poste) + '</span>' + ico('arrow-right', 'lg-user-a') + '</button>';
+    }).join('');
+  }
+
+  /* Connexion du Back Office par code à usage unique reçu par e-mail. */
+  const otp = { email: '', fin: 0, duree: 1, renvoi: 0, minuteur: null };
+
+  async function demanderOtp(email, bouton, renvoi) {
+    const u = (C.BO_UTILISATEURS || []).find(function (x) { return x.email === email; });
+    if (!u) return;
+    erreurConnexion('');
+    if (bouton) bouton.classList.add('busy');
+    chargement(true);
+    try {
+      const r = await Store.otpEnvoyer(email);
+      otp.email = email;
+      otp.duree = (r.expire || C.OTP_MINUTES * 60) * 1000;
+      otp.fin = Date.now() + otp.duree;
+      otp.renvoi = Date.now() + 45000;
+      etapeConnexion(3);
+      $('#otpMail').textContent = masquerEmail(u.email);
+      $('#otpNom').textContent = u.nom;
+      $('#otpPoste').textContent = u.poste + ' · Back Office';
+      $('#otpAv').textContent = initiales(u.nom);
+      $('#otpDemo').hidden = !r.demoCode;
+      $('#otpDemo').innerHTML = r.demoCode ? ico('flask-conical') + '<span>Mode démonstration — votre code : <b class="mono">' + esc(r.demoCode) + '</b></span>' : '';
+      viderOtp();
+      clearInterval(otp.minuteur);
+      otp.minuteur = setInterval(tickOtp, 250);
+      tickOtp();
+      icones();
+      if (renvoi) toast('Nouveau code envoyé à ' + masquerEmail(u.email), 'ok');
+    } catch (err) {
+      erreurConnexion(err.message);
+    } finally {
+      if (bouton) bouton.classList.remove('busy');
+      chargement(false);
+    }
+  }
+
+  function arreterOtp() { clearInterval(otp.minuteur); otp.minuteur = null; }
+
+  function tickOtp() {
+    const reste = Math.max(0, otp.fin - Date.now());
+    const sec = Math.ceil(reste / 1000);
+    $('#otpTime').textContent = Math.floor(sec / 60) + ':' + p2(sec % 60);
+    $('#otpArc').style.strokeDashoffset = String(119.4 * (1 - reste / otp.duree));
+    $('#otpRing').classList.toggle('low', sec <= 60);
+    $('#otpRing').classList.toggle('off', !reste);
+    $('#otpGo').disabled = !reste;
+    const attente = Math.ceil((otp.renvoi - Date.now()) / 1000);
+    $('#otpRe').disabled = reste > 0 && attente > 0;
+    $('#otpReTxt').textContent = !reste ? 'Code expiré.' : attente > 0 ? 'Renvoi possible dans ' + attente + ' s.' : 'Pas reçu ?';
+    if (!reste) arreterOtp();
+  }
+
+  const casesOtp = function () { return $$('#otpIn input'); };
+  function viderOtp() {
+    casesOtp().forEach(function (c) { c.value = ''; c.classList.remove('err'); });
+    setTimeout(function () { casesOtp()[0].focus(); }, 60);
+  }
+  function codeOtp() { return casesOtp().map(function (c) { return c.value; }).join(''); }
+
+  function initSaisieOtp() {
+    const cases = casesOtp();
+    const remplir = function (depart, chiffres) {
+      chiffres.split('').forEach(function (ch, k) { if (cases[depart + k]) cases[depart + k].value = ch; });
+      cases[Math.min(cases.length - 1, depart + chiffres.length)].focus();
+      if (codeOtp().length === cases.length) validerOtp();
+    };
+    cases.forEach(function (c, k) {
+      c.addEventListener('input', function () {
+        const v = c.value.replace(/\D/g, '');
+        c.value = '';
+        cases.forEach(function (x) { x.classList.remove('err'); });
+        if (v) remplir(k, v.slice(0, cases.length - k));
+      });
+      c.addEventListener('keydown', function (e) {
+        if (e.key === 'Backspace' && !c.value && cases[k - 1]) { cases[k - 1].value = ''; cases[k - 1].focus(); e.preventDefault(); }
+        if (e.key === 'ArrowLeft' && cases[k - 1]) cases[k - 1].focus();
+        if (e.key === 'ArrowRight' && cases[k + 1]) cases[k + 1].focus();
+      });
+      c.addEventListener('paste', function (e) {
+        const v = ((e.clipboardData || window.clipboardData).getData('text') || '').replace(/\D/g, '');
+        if (!v) return;
+        e.preventDefault();
+        remplir(0, v.slice(0, cases.length));
+      });
+      c.addEventListener('focus', function () { c.select(); });
+    });
+  }
+
+  let otpEnCours = false;
+  async function validerOtp() {
+    const code = codeOtp();
+    if (otpEnCours) return;
+    if (code.length !== 6) { erreurConnexion('Saisissez les 6 chiffres du code reçu.'); return; }
+    if (Date.now() >= otp.fin) { erreurConnexion('Code expiré. Demandez un nouveau code.'); return; }
+    otpEnCours = true;
+    $('#otpGo').disabled = true;
+    chargement(true);
+    erreurConnexion('');
+    try {
+      const r = await Store.otpVerifier(otp.email, code);
+      arreterOtp();
+      demarrerSession({ profil: BO, code: '', token: r.token, user: r.user, isBO: true });
+      toast('Bienvenue ' + r.user.nom, 'ok');
+    } catch (err) {
+      erreurConnexion(err.message);
+      casesOtp().forEach(function (c) { c.classList.add('err'); });
+      if (err.code === 'OTP_EXPIRE') { otp.fin = Date.now(); tickOtp(); } else { viderOtp(); }
+    } finally {
+      otpEnCours = false;
+      $('#otpGo').disabled = Date.now() >= otp.fin;
+      chargement(false);
+    }
   }
 
   function erreurConnexion(msg) {
@@ -287,6 +425,8 @@
   function etapeConnexion(n) {
     $('#lgStep1').hidden = n !== 1 || !Store.configure;
     $('#lgStep2').hidden = n !== 2;
+    $('#lgOtp').hidden = n !== 3;
+    if (n !== 3) arreterOtp();
     erreurConnexion('');
     if (n === 2) {
       const bo = profilChoisi === BO;
@@ -303,12 +443,12 @@
     connecter(profil, '');
   }
 
-  async function connecter(profil, code, silencieux) {
+  async function connecter(profil, code, silencieux, token) {
     chargement(true);
     erreurConnexion('');
     try {
-      const r = await Store.login({ profil: profil, code: code });
-      demarrerSession({ profil: r.profil || profil, code: code, isBO: (r.profil || profil) === BO });
+      const r = await Store.login({ profil: profil, code: code, token: token });
+      demarrerSession({ profil: r.profil || profil, code: code, token: token || '', user: r.user || null, isBO: (r.profil || profil) === BO });
     } catch (err) {
       if (silencieux) { afficherConnexion(); return; }
       if (err.code === 'CODE_REQUIS') {
@@ -340,10 +480,11 @@
 
   function demarrerSession(sess) {
     S.session = sess;
-    memoire.ecrire(CLE_SESSION, { profil: sess.profil, code: sess.code });
+    memoire.ecrire(CLE_SESSION, { profil: sess.profil, code: sess.code, token: sess.token || '', user: sess.user || null });
     memoire.ecrire('sip_dernier_profil', sess.profil);
     S.vus = memoire.lire(cle('vus')) || {};
     S.vusBase = memoire.lire(cle('vus_base'));
+    if (sess.user) memoire.ecrire(cle('agent'), sess.user.nom);
     if (!S.vusBase) { S.vusBase = new Date().toISOString(); memoire.ecrire(cle('vus_base'), S.vusBase); }
     document.body.className = sess.isBO ? 'is-bo' : 'is-pdv';
     $('#login').hidden = true;
@@ -364,6 +505,7 @@
     clearInterval(S.minuteur);
     fermerDeclaration();
     fermerPanneau();
+    if (S.session && S.session.token && !message && Store.logout) Store.logout(S.session);
     memoire.effacer(CLE_SESSION);
     S.session = null;
     S.incidents = [];
@@ -385,11 +527,12 @@
 
   function initApp() {
     const bo = estBO();
-    $('#sbAv').textContent = bo ? 'BO' : moi().charAt(0);
+    const u = S.session.user;
+    $('#sbAv').textContent = bo ? (u ? initiales(u.nom) : 'BO') : moi().charAt(0);
     $('#sbAv').className = 'av' + (bo ? ' bo' : '');
-    $('#sbName').textContent = bo ? 'Back Office' : moi();
-    $('#sbRole').textContent = bo ? C.POINTS_DE_VENTE.length + ' points de vente' : 'Point de vente';
-    $('#topEyebrow').textContent = bo ? 'Back Office · E-Money' : 'Point de vente ' + moi();
+    $('#sbName').textContent = bo ? (u ? u.nom : 'Back Office') : moi();
+    $('#sbRole').textContent = bo ? (u ? u.poste + ' · Back Office' : C.POINTS_DE_VENTE.length + ' points de vente') : 'Point de vente';
+    $('#topEyebrow').textContent = bo ? 'Back Office · ' + (u ? u.nom : 'E-Money') : 'Point de vente ' + moi();
     $('#demoBar').hidden = !Store.demo;
     $('#sbNav').innerHTML = '<p class="sb-lbl">' + (bo ? 'Traitement' : 'Mon espace') + '</p>' + vues().map(function (v) {
       return '<a href="#/' + v.id + '" class="sb-a" data-vue="' + v.id + '">' + ico(v.ico) + v.libelle + '<span class="cnt" data-cnt="' + v.id + '" hidden></span></a>';
@@ -506,7 +649,7 @@
       majSynchro('');
     } catch (err) {
       majSynchro('off');
-      if (err.code === 'CODE_INVALIDE' || err.code === 'CODE_REQUIS' || err.code === 'PROFIL_INCONNU') {
+      if (err.code === 'CODE_INVALIDE' || err.code === 'CODE_REQUIS' || err.code === 'PROFIL_INCONNU' || err.code === 'SESSION_EXPIREE') {
         deconnecter('Session expirée : ' + err.message);
       } else if (!silencieux) {
         toast(err.message, 'err');
@@ -1269,19 +1412,19 @@
     const op = operateur(i.operateur);
 
     const it = function (l, v, large, copie) {
-      return '<div class="pi' + (large ? ' w' : '') + '"><div class="pil">' + l + '</div><div class="piv">' + (v || '<span class="z">—</span>') +
+      return '<div class="pi' + (large === 2 ? ' w2' : large ? ' w' : '') + '"><div class="pil">' + l + '</div><div class="piv">' + (v || '<span class="z">—</span>') +
         (copie ? '<button type="button" class="cp" data-copy="' + esc(copie) + '" title="Copier">' + ico('copy') + '</button>' : '') + '</div></div>';
     };
     const champs = i.categorie === 'FORMALITE'
       ? [it('Incident survenu', esc(i.incident)), it('Formalité voulue', esc(i.formalite)),
         it('N° de liquidation', i.num_liquidation ? '<span class="mono">' + esc(i.num_liquidation) + '</span>' : '', false, i.num_liquidation),
         it('Moyen de paiement', i.operateur ? pastilleOp(i.operateur) : 'Espèces / autre'),
-        it("Date de l'opération", fDateHeure(i.date_operation)), it('Solution demandée', esc(i.solution))]
+        it("Date de l'opération", fDateHeure(i.date_operation)), it('Déclaré le', fDateHeure(i.cree_le)),
+        it('Solution demandée', esc(i.solution), 2), it('Déclaré par', esc(declarePar(i)))]
       : [it('Opérateur', pastilleOp(i.operateur)), it("Date de l'opération", fDateHeure(i.date_operation)),
         it('N° client', i.telephone ? '<span class="mono">' + esc(i.telephone) + '</span>' : '', false, i.telephone),
-        it('Référence transaction', i.reference ? '<span class="mono">' + esc(i.reference) + '</span>' : '', false, i.reference),
-        it('Solution demandée', esc(i.solution), true)];
-    champs.push(it('Déclaré par', esc(declarePar(i))), it('Déclaré le', fDateHeure(i.cree_le)));
+        it('Référence transaction', i.reference ? '<span class="mono">' + esc(i.reference) + '</span>' : '', 2, i.reference),
+        it('Déclaré le', fDateHeure(i.cree_le)), it('Solution demandée', esc(i.solution), 2), it('Déclaré par', esc(declarePar(i)))];
 
     // Suivi en 4 étapes
     const st = etape(i);
@@ -1300,28 +1443,33 @@
     }).join('') + '</div>';
 
     // Fil de suivi
-    const tl = ['<div class="tli' + (i.pdv === moi() ? ' me' : '') + '"><div class="tld start">' + ico('send') + '</div><div class="tlb"><div class="tdh">Déclaration de l\'incident</div><div class="tdt">' + esc(declarePar(i)) + ' · ' + fDateHeure(i.cree_le) + '</div></div></div>'];
+    const tl = ['<div class="tli' + (i.pdv === moi() ? ' me' : '') + '"><div class="tld start">' + ico('send') + '</div><div class="tlb"><div class="tdh">Déclaration de l\'incident<span class="tdt">' + esc(declarePar(i)) + ' · ' + fDateHeure(i.cree_le) + '</span></div></div></div>'];
     actionsDe(i.id).forEach(function (a) {
       const cls = a.code === 'TERMINE' ? 'done' : a.code === 'REJETE' ? 'blocked' : a.code === 'INFO_PDV' ? 'ask' : a.code === 'COMPLEMENT' ? 'pdv' : a.code === 'COMMENTAIRE' ? '' : 'ongoing';
       tl.push('<div class="tli' + (a.auteur === moi() ? ' me' : '') + '"><div class="tld ' + cls + '">' + ico(ICO_ACTION[a.code] || 'dot') + '</div><div class="tlb">' +
-        '<div class="tdh">' + esc(a.libelle) + (a.reference ? '<span class="tdr">' + esc(a.reference) + '</span>' : '') + '</div>' +
-        '<div class="tdt">' + esc(a.auteur === BO ? 'Back Office' : a.auteur) + (a.agent && a.agent !== a.auteur ? ' · ' + esc(a.agent) : '') + ' · ' + fDateHeure(a.cree_le) + '</div>' +
+        '<div class="tdh">' + esc(a.libelle) + (a.reference ? '<span class="tdr">' + esc(a.reference) + '</span>' : '') +
+        '<span class="tdt">' + esc(a.auteur === BO ? (a.agent || 'Back Office') : a.auteur) + ' · ' + fDateHeure(a.cree_le) + '</span></div>' +
         (a.commentaire ? '<div class="tdd">' + esc(a.commentaire) + '</div>' : '') + '</div></div>');
     });
 
+    // Deux colonnes : le dossier à gauche, l'échange avec le Back Office à droite (sans défilement de la page).
     $('#pBody').innerHTML =
-      '<div class="p-head">' +
+      '<div class="p-grid"><div class="p-head" style="--tc:' + tc + '"><div class="p-head-l">' +
       '<div class="p-id">' + icoNature(i) + '<span class="mono">' + esc(i.id) + '</span><button type="button" class="cp" data-copy="' + esc(i.id) + '" title="Copier le n°">' + ico('copy') + '</button>' + badge(e) + tagAge(i) + '</div>' +
-      '<h2 class="p-amt" id="pTitle">' + nombre(i.montant) + '<small>FCFA</small></h2>' +
-      '<div class="p-sub"><span>' + esc(sousTitre(i)) + '</span>' + (estBO() ? '<span class="z">·</span><b>' + esc(i.pdv) + '</b>' : '') + (op ? '<span class="z">·</span>' + pastilleOp(i.operateur) : '') + '</div>' +
-      '</div>' + track + prochaineEtape(i) +
+      '<div class="p-hero"><h2 class="p-amt" id="pTitle">' + nombre(i.montant) + '<small>FCFA</small></h2>' +
+      '<div class="p-sub"><span>' + esc(sousTitre(i)) + '</span>' + (estBO() ? '<span class="z">·</span><b>' + esc(i.pdv) + '</b>' : '') + (op ? '<span class="z">·</span>' + pastilleOp(i.operateur) : '') + '</div></div>' +
+      '</div>' + track + '</div><div class="p-col p-l">' + prochaineEtape(i) +
       '<div class="ps"><div class="pst">' + ico('info') + 'Informations déclarées</div><div class="pg">' + champs.join('') + '</div></div>' +
       '<div class="ps"><div class="pst">' + ico('message-square-text') + 'Ce qui s\'est passé</div><div class="ptx">' + esc(i.description) + '</div></div>' +
-      '<div class="ps"><div class="pst">' + ico('history') + 'Historique du traitement</div><div class="tl">' + tl.join('') + '</div></div>' +
-      formulaireAction(i);
+      '</div><div class="p-col p-r">' +
+      '<div class="ps p-hist"><div class="pst">' + ico('history') + 'Historique du traitement<span class="pst-n">' + tl.length + '</span></div><div class="tl" id="pTl">' + tl.join('') + '</div></div>' +
+      formulaireAction(i) + '</div></div>';
     icones();
     lierFormulaire(brouillon);
     if (nouveau) $('#pBody').scrollTop = 0;
+    // Le fil de suivi s'ouvre sur la dernière action.
+    const fil = $('#pTl');
+    if (fil) fil.scrollTop = fil.scrollHeight;
   }
 
   // Encadré « que faire maintenant ? » adapté au rôle et à l'état.
@@ -1363,17 +1511,17 @@
 
   function formulaireAction(i) {
     if (estBO()) {
-      const agent = memoire.lire(cle('agent')) || '';
+      const agent = (S.session.user && S.session.user.nom) || memoire.lire(cle('agent')) || '';
       return '<div class="ps" id="cmpWrap"><div class="pst">' + ico('square-pen') + 'Ajouter une action</div><form class="cmp" id="fAct" novalidate>' +
         '<div class="acts">' + C.ACTIONS_BO.map(function (a) {
           const t = a.statut === 'TERMINE' ? ' class="t-ok"' : a.statut === 'REJETE' ? ' class="t-ko"' : '';
-          return '<label' + t + '><input type="radio" name="code" value="' + esc(a.code) + '"><span>' + ico(ICO_ACTION[a.code] || 'dot') + esc(a.libelle) + '</span></label>';
+          return '<label' + t + ' title="' + esc(a.libelle) + '"><input type="radio" name="code" value="' + esc(a.code) + '"><span>' + ico(ICO_ACTION[a.code] || 'dot') + esc(COURTS_ACTION[a.code] || a.libelle) + '</span></label>';
         }).join('') + '</div>' +
         '<div id="aRefWrap" hidden><label class="fl" for="aRef">Référence (N° CA, N° de demande…)</label><input class="in mono" id="aRef" name="reference" autocomplete="off"></div>' +
-        '<label class="fl" for="aCom" id="aComL">Commentaire</label><textarea class="in" id="aCom" name="commentaire" rows="3" placeholder="Détail de l\'action, réponse de l\'opérateur, consigne au PDV…"></textarea>' +
+        '<label class="fl" for="aCom" id="aComL">Commentaire</label><textarea class="in" id="aCom" name="commentaire" rows="2" placeholder="Détail de l\'action, réponse de l\'opérateur, consigne au PDV…"></textarea>' +
         '<div id="aAgentWrap"' + (agent ? ' hidden' : '') + '><label class="fl" for="aAgent">Votre nom (agent Back Office) *</label><input class="in" id="aAgent" name="agent" value="' + esc(agent) + '" autocomplete="name"></div>' +
         '<div class="msg err" id="aErr" hidden></div>' +
-        '<div class="cmp-ft">' + (agent ? '<span class="agent">' + ico('user') + 'Agent : <b>' + esc(agent) + '</b><button type="button" id="aAgentEdit">modifier</button></span>' : '') +
+        '<div class="cmp-ft">' + (agent ? '<span class="agent">' + ico('user') + 'Agent : <b>' + esc(agent) + '</b>' + (S.session.user ? '' : '<button type="button" id="aAgentEdit">modifier</button>') + '</span>' : '') +
         '<span class="grow"></span><button class="btn bp" type="submit" id="aGo">' + ico('check') + 'Enregistrer</button></div>' +
         '</form></div>';
     }
@@ -1558,8 +1706,8 @@
 
   function initDeclaration() {
     $('#nOps').innerHTML = C.OPERATEURS.map(function (o) {
-      return '<label style="--opc:' + esc(o.couleur) + '"><input type="radio" name="operateur" value="' + esc(o.code) + '"><span>' + logoOp(o) + esc(o.nom) + '</span></label>';
-    }).join('') + '<label class="only-f"><input type="radio" name="operateur" value=""><span>' + ico('banknote') + 'Espèces / autre</span></label>';
+      return '<label style="--opc:' + esc(o.couleur) + '"><input type="radio" name="operateur" value="' + esc(o.code) + '"><span>' + logoOp(o) + '<b>' + esc(o.nom) + '</b></span></label>';
+    }).join('') + '<label class="only-f"><input type="radio" name="operateur" value=""><span><span class="op-l op-cash">' + ico('banknote') + '</span><b>Espèces / autre</b></span></label>';
     $('#nIncident').innerHTML = C.INCIDENTS_FORMALITE.map(function (x) { return '<label><input type="radio" name="incident" value="' + esc(x) + '"><span>' + esc(x) + '</span></label>'; }).join('');
 
     $$('#fNew [name=nature]').forEach(function (r) {
@@ -1584,14 +1732,20 @@
         const brut = t.value.replace(/\D/g, '').replace(/^0+/, '');
         t.value = brut ? nombre(brut) : '';
       }
+      if (t.id === 'nDesc') $('#nDescN').textContent = t.value.length + ' / 2000';
       sauverBrouillon();
+      majTicket();
     });
-    $('#fNew').addEventListener('change', function (e) { if (e.target.name === 'operateur' || e.target.name === 'incident' || e.target.name === 'solution') sauverBrouillon(); });
+    $('#fNew').addEventListener('change', function (e) {
+      if (e.target.name === 'operateur' || e.target.name === 'incident' || e.target.name === 'solution') sauverBrouillon();
+      majTicket();
+    });
     $('#nQuickDate').addEventListener('click', function (e) {
       const b = e.target.closest('[data-h]');
       if (!b) return;
       $('#nDate').value = dateLocale(new Date(Date.now() - Number(b.dataset.h) * 36e5));
       $('#nDate').classList.remove('err');
+      majTicket();
     });
     $('#nTpl').addEventListener('click', function (e) {
       const b = e.target.closest('button');
@@ -1600,6 +1754,7 @@
       d.value = d.value.trim() ? d.value.trim() + ' ' + b.textContent : b.textContent;
       d.classList.remove('err');
       d.focus();
+      $('#nDescN').textContent = d.value.length + ' / 2000';
       sauverBrouillon();
     });
     $('#nRecap').addEventListener('click', function (e) {
@@ -1692,7 +1847,9 @@
     });
     $('#wzFill').style.width = Math.min(100, (k / 4) * 100) + '%';
     $('#mNewTitle').textContent = TITRES[k];
-    $('#nSteps').hidden = k === 5;
+    $('#wzStepLbl').textContent = k === 5 ? 'Terminé' : 'Étape ' + k + ' sur 4';
+    $('#mNew').classList.toggle('wz-ok', k === 5);
+    majTicket();
     $('#nPrev').innerHTML = k === 1 ? 'Annuler' : ico('arrow-left') + 'Retour';
     $('#nPrev').hidden = k === 5;
     $('#nNext').hidden = k >= 4;
@@ -1746,6 +1903,23 @@
       : '';
   }
 
+  // Ticket récapitulatif affiché en direct à côté de l'assistant.
+  function majTicket() {
+    const d = donneesDeclaration();
+    const n = NATURES[natureChoisie()];
+    const op = d.operateur ? operateur(d.operateur) : null;
+    $('#tkIco').className = 'tk-i' + (n ? ' n-' + natureChoisie() : '');
+    $('#tkIco').innerHTML = ico(n ? n.ico : 'receipt');
+    $('#tkNat').textContent = n ? n.libelle + (d.categorie === 'FORMALITE' && d.incident ? ' · ' + d.incident : '') : 'Nouvel incident';
+    $('#tkOp').innerHTML = op ? logoOp(op) + esc(op.nom) : (d.categorie === 'FORMALITE' ? esc(d.formalite || 'Formalité à préciser') : 'Opérateur à choisir');
+    $('#tkAmt').textContent = Number(d.montant) > 0 ? nombre(d.montant) : '0';
+    $('#tkDate').textContent = d.date_operation ? fDateHeure(d.date_operation) : '—';
+    const ref = d.categorie === 'FORMALITE' ? d.num_liquidation : d.reference;
+    $('#tkRef').textContent = ref || (d.categorie === 'FORMALITE' ? 'N° de liquidation à préciser' : 'Référence à préciser');
+    $('#tkRef').classList.toggle('z', !ref);
+    icones();
+  }
+
   function appliquerNature(n) {
     const formalite = n === 'FORMALITE';
     $('#mNew').classList.toggle('n-mm', !formalite);
@@ -1795,6 +1969,7 @@
     $('#nDate').max = dateLocale(new Date(Date.now() + 5 * 6e4));
     $('#nSolution').innerHTML = '';
     $('#nDraft').innerHTML = '';
+    $('#nDescN').textContent = '0 / 2000';
     incidentCree = null;
     const formalites = {};
     C.FORMALITES.concat(S.incidents.map(function (i) { return i.formalite; })).forEach(function (x) { if (x) formalites[x] = true; });
@@ -1922,7 +2097,7 @@
   const enregistree = memoire.lire(CLE_SESSION);
   if (Store.configure && enregistree && enregistree.profil) {
     profilChoisi = enregistree.profil;
-    connecter(enregistree.profil, enregistree.code || '', true);
+    connecter(enregistree.profil, enregistree.code || '', true, enregistree.token || '');
   } else {
     afficherConnexion();
   }

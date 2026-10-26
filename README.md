@@ -14,11 +14,24 @@ Le site est un tableau de bord statique (HTML/CSS/JS, Chart.js, SheetJS, icônes
 ## Fonctionnalités
 
 ### Connexion — « Qui êtes-vous ? »
-À l'ouverture, l'utilisateur choisit son profil : l'un des **28 points de vente** (ABOBO, ABOISSO, AGBOVILLE, ANGRE, BONDOUKOU, BONGOUANOU, BOUAKE, BOUNA, BOUNDIALI, COSMOS, DAOUKRO, DIMBOKRO, DIVO, FERKE, FOURRIERE ABOBO, FOURRIERE BASSAM, GUIGLO, KONG, MANKONO, KATIOLA, ODIENNE, PHB, SASSANDRA, SEGUELA, TOUBA, SIEGE, VGE, YOPOUGON) ou le **Back Office**. Un code d'accès peut être exigé par profil (facultatif, voir plus bas). Le profil reste connecté sur l'appareil jusqu'au clic sur **« Se déconnecter »**.
+À l'ouverture, l'utilisateur choisit son profil : l'un des **28 points de vente** (ABOBO, ABOISSO, AGBOVILLE, ANGRE, BONDOUKOU, BONGOUANOU, BOUAKE, BOUNA, BOUNDIALI, COSMOS, DAOUKRO, DIMBOKRO, DIVO, FERKE, FOURRIERE ABOBO, FOURRIERE BASSAM, GUIGLO, KONG, MANKONO, KATIOLA, ODIENNE, PHB, SASSANDRA, SEGUELA, TOUBA, SIEGE, VGE, YOPOUGON) ou le **Back Office**. Les 28 points de vente sont tous visibles d'un coup, sans défilement. Un code d'accès peut être exigé par point de vente (facultatif, voir plus bas). Le profil reste connecté sur l'appareil jusqu'au clic sur **« Se déconnecter »**.
+
+**Back Office — connexion par code reçu par e-mail.** L'onglet *Back Office* liste les agents autorisés (nom, poste, e-mail). Un clic sur son nom envoie à l'agent un **code à 6 chiffres valable 5 minutes** (5 essais au maximum, renvoi possible après 45 s). Une fois connecté, l'agent est identifié automatiquement dans les actions de suivi (plus de nom à saisir). La session dure 12 heures.
+
+| Nom | Poste | E-mail |
+|---|---|---|
+| Anne Adjo | Opérateur | anne.niamkoun@cgi.ci |
+| Aminata Sow | Assistant | aminata.sow@cgi.ci |
+| Axel Kouamenan | Chef | axel.kouamenan@cgi.ci |
+| Zeinab Kone | Responsable | zeinab.kone@cgi.ci |
+| Issa Kone | Manager | issa.kone@cgi.ci |
+| Jansenus Koffi | Manager | jansenus.koffi@cgi.ci |
+
+Pour ajouter ou retirer un agent : modifiez `BO_UTILISATEURS` **à la fois** dans `assets/js/config.js` (affichage) et dans `apps-script/Code.gs` (autorisation, côté serveur), puis redéployez le script. Un agent retiré du script perd l'accès immédiatement.
 
 ### Point de vente
 - **Accueil** : trois boutons *Dépôt / Retrait / Formalité* pour déclarer en un clic, les incidents pour lesquels **le Back Office attend une réponse**, les indicateurs du PDV et les dernières nouvelles (non lues signalées).
-- **Déclarer un incident** — assistant en 4 étapes :
+- **Déclarer un incident** — assistant en 4 étapes, sans défilement, avec les étapes à gauche et un **ticket récapitulatif mis à jour en direct** :
   - *Dépôt / Retrait* : opérateur, montant (saisi avec séparateurs), date et heure (raccourcis « Maintenant », « Hier »…), n° du client, référence de la transaction.
   - *Paiement de formalité* : incident survenu, n° de liquidation, formalité voulue, montant, moyen de paiement.
   - Explication (phrases types proposées) et solution demandée, puis vérification avec **alerte de doublon** si un incident proche existe déjà. Un brouillon est conservé si l'assistant est fermé.
@@ -27,7 +40,7 @@ Le site est un tableau de bord statique (HTML/CSS/JS, Chart.js, SheetJS, icônes
 
 ### Back Office
 - **File de traitement** : À prendre en charge (du plus ancien au plus récent, retards > 48 h signalés) · En traitement (réponses des PDV en tête) · En attente du PDV · Clôturés sur 7 jours. Bouton **« Prendre en charge »** directement depuis la liste.
-- **Détail d'un incident** : étape suivante proposée selon l'état, actions de suivi avec référence et commentaire (Prise en charge · Création de CA · Demande de régularisation · Relance opérateur · Demande d'information au PDV · Commentaire · Terminée · Rejetée), navigation vers l'incident suivant (touches J / K).
+- **Détail d'un incident** (fenêtre en deux colonnes sans défilement : dossier à gauche, historique et saisie d'action à droite) : étape suivante proposée selon l'état, actions de suivi avec référence et commentaire (Prise en charge · Création de CA · Demande de régularisation · Relance opérateur · Demande d'information au PDV · Commentaire · Terminée · Rejetée), navigation vers l'incident suivant (touches J / K).
 - **Pilotage** : indicateurs comparés à la période précédente, répartition par état, évolution, montants par nature, par opérateur, points de vente les plus concernés.
 - **Registre** complet, triable et filtrable, et **Synthèse par PDV** avec indicateur de santé.
 
@@ -64,7 +77,7 @@ Le site est ensuite disponible à l'adresse `https://<compte>.github.io/suivi-in
 
 1. Avec le compte Google de l'entreprise, créez une feuille **Google Sheets** vide (par ex. « Incidents PDV »).
 2. Menu **Extensions → Apps Script**. Remplacez le contenu de `Code.gs` par celui du fichier [`apps-script/Code.gs`](apps-script/Code.gs), puis enregistrez.
-3. Dans la liste des fonctions, choisissez **`setup`** puis **Exécuter**, et acceptez les autorisations demandées.
+3. Dans la liste des fonctions, choisissez **`setup`** puis **Exécuter**, et acceptez les autorisations demandées (dont **l'envoi d'e-mails**, nécessaire aux codes de connexion du Back Office).
    Les onglets `Incidents`, `Actions` et `Acces` sont créés dans la feuille.
 4. **Déployer → Nouveau déploiement** → type **Application Web** :
    - *Exécuter en tant que* : **Moi**
@@ -77,15 +90,17 @@ Le site est ensuite disponible à l'adresse `https://<compte>.github.io/suivi-in
    puis publiez la modification (commit + push). La liste « Qui êtes-vous ? » apparaît alors à la connexion.
 
 > Après toute modification de `Code.gs` : **Déployer → Gérer les déploiements → ✏️ → Version : Nouvelle version → Déployer**. L'URL ne change pas.
+> Si une nouvelle autorisation est demandée (envoi d'e-mails), exécutez une fois `setup` depuis l'éditeur pour l'accepter.
 
-### 3. Codes d'accès (recommandé)
+### 3. Codes d'accès des points de vente (recommandé)
 
-Dans l'onglet **`Acces`** de la feuille, la colonne `code` contient un code par profil :
+Le Back Office se connecte uniquement par code reçu par e-mail (la ligne `BACK OFFICE` de l'onglet `Acces` n'est plus utilisée).
+Dans l'onglet **`Acces`** de la feuille, la colonne `code` contient un code par point de vente :
 
 - code **vide** → accès direct en cliquant sur le profil (comportement par défaut) ;
 - code **renseigné** → l'application le demande à la connexion.
 
-Il est conseillé de mettre **au moins un code au Back Office**, puis un code par point de vente. La vérification est faite côté serveur : un point de vente ne reçoit jamais les incidents des autres.
+Il est conseillé de mettre un code par point de vente. La vérification est faite côté serveur : un point de vente ne reçoit jamais les incidents des autres.
 
 ---
 
@@ -125,7 +140,7 @@ Servez le dossier avec n'importe quel serveur web, par exemple WampServer (`http
 npx serve .
 ```
 
-Ajoutez `?demo` à l'adresse (ex. `index.html?demo`) pour tester l'interface avec des **données fictives** : rien n'est envoyé à Google Sheets.
+Ajoutez `?demo` à l'adresse (ex. `index.html?demo`) pour tester l'interface avec des **données fictives** : rien n'est envoyé à Google Sheets, et le code de connexion du Back Office s'affiche à l'écran au lieu d'être envoyé par e-mail.
 
 ## À savoir
 

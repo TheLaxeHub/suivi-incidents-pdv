@@ -1,7 +1,7 @@
 /*
  * Accès aux données : API Google Apps Script (apps-script/Code.gs).
  * La feuille Google Sheets sert de base partagée entre les points de vente et le Back Office.
- * Interface : login, list, create, addAction.
+ * Interface : login, list, create, addAction, et pour le Back Office otpEnvoyer, otpVerifier, logout.
  *
  * Mode démonstration : ajouter ?demo à l'URL pour tester l'interface avec des données fictives
  * (rien n'est envoyé au serveur, tout est perdu au rechargement).
@@ -126,16 +126,43 @@
       else ajouterAction(inc, 'REJETE', BO, agent, t(24 + hasard() * 24), 'La transaction a bien abouti côté opérateur.');
     }
 
+    // Codes de connexion du Back Office : affichés à l'écran au lieu d'être envoyés par e-mail.
+    const otps = {};
+    const agentBo = function (email) {
+      const u = (C.BO_UTILISATEURS || []).find(function (x) { return x.email === email; });
+      if (!u) throw erreur('AGENT_INCONNU', "Cet agent n'est pas autorisé au Back Office.");
+      return u;
+    };
+
     function verifier(s) {
       if (s.profil !== BO && C.POINTS_DE_VENTE.indexOf(s.profil) < 0) throw erreur('PROFIL_INCONNU', 'Profil inconnu.');
-      return { ok: true, profil: s.profil };
+      if (s.profil !== BO) return { ok: true, profil: s.profil, user: null };
+      // Jeton de démonstration : « demo: » suivi de l'e-mail de l'agent.
+      const u = (C.BO_UTILISATEURS || []).find(function (x) { return 'demo:' + x.email === s.token; });
+      if (!u) throw erreur('SESSION_EXPIREE', 'Session Back Office expirée, reconnectez-vous.');
+      return { ok: true, profil: s.profil, user: { nom: u.nom, poste: u.poste, email: u.email } };
     }
     const copie = function (o) { return JSON.parse(JSON.stringify(o)); };
 
     return {
       configure: true,
       demo: true,
-      login: function (s) { return pause(verifier(s)); },
+      login: function (s) { try { return pause(verifier(s)); } catch (e) { return Promise.reject(e); } },
+      otpEnvoyer: function (email) {
+        const u = agentBo(email);
+        const code = String(Math.floor(1e5 + Math.random() * 9e5));
+        otps[email] = { code: code, exp: Date.now() + (C.OTP_MINUTES || 5) * 6e4 };
+        return pause({ ok: true, email: u.email, expire: (C.OTP_MINUTES || 5) * 60, demoCode: code });
+      },
+      otpVerifier: function (email, otp) {
+        const u = agentBo(email);
+        const o = otps[email];
+        if (!o || o.exp < Date.now()) return Promise.reject(erreur('OTP_EXPIRE', 'Code expiré ou inexistant. Demandez un nouveau code.'));
+        if (o.code !== otp) return Promise.reject(erreur('OTP_INVALIDE', 'Code incorrect.'));
+        delete otps[email];
+        return pause({ ok: true, token: 'demo:' + u.email, profil: BO, isBO: true, user: { nom: u.nom, poste: u.poste, email: u.email } });
+      },
+      logout: function () { return Promise.resolve({ ok: true }); },
       list: function (s) {
         verifier(s);
         const mes = s.profil === BO ? incidents : incidents.filter(function (i) { return i.pdv === s.profil; });
@@ -167,11 +194,14 @@
   window.Store = DEMO ? demo() : {
     configure: !!C.API_URL,
     demo: false,
-    login: function (s) { return appel({ action: 'login', profil: s.profil, code: s.code }); },
-    list: function (s) { return appel({ action: 'list', profil: s.profil, code: s.code }); },
+    login: function (s) { return appel({ action: 'login', profil: s.profil, code: s.code, token: s.token }); },
+    otpEnvoyer: function (email) { return appel({ action: 'otpSend', email: email }); },
+    otpVerifier: function (email, otp) { return appel({ action: 'otpVerify', email: email, otp: otp }); },
+    logout: function (s) { return appel({ action: 'logout', token: s.token }).catch(function () { /* déjà expirée */ }); },
+    list: function (s) { return appel({ action: 'list', profil: s.profil, code: s.code, token: s.token }); },
     create: function (s, data) {
-      return appel({ action: 'create', profil: s.profil, code: s.code, data: data }).then(function (r) { return r.incident; });
+      return appel({ action: 'create', profil: s.profil, code: s.code, token: s.token, data: data }).then(function (r) { return r.incident; });
     },
-    addAction: function (s, data) { return appel({ action: 'addAction', profil: s.profil, code: s.code, data: data }); },
+    addAction: function (s, data) { return appel({ action: 'addAction', profil: s.profil, code: s.code, token: s.token, data: data }); },
   };
 })();
