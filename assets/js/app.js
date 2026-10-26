@@ -99,12 +99,6 @@
   // Espace insécable classique : l'espace fine de fr-FR n'existe pas dans toutes les polices.
   const nombre = function (n) { return nf.format(Math.round(Number(n) || 0)).replace(/ /g, ' '); };
   const fcfa = function (n) { return nombre(n) + ' FCFA'; };
-  const compact = function (n) {
-    n = Number(n) || 0;
-    if (n >= 1e6) return (n / 1e6).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' M';
-    if (n >= 1e4) return Math.round(n / 1e3) + ' k';
-    return nombre(n);
-  };
   const p2 = function (n) { return String(n).padStart(2, '0'); };
   const date = function (v) { if (!v) return null; const d = v instanceof Date ? v : new Date(v); return isNaN(d) ? null : d; };
   const fDate = function (v) { const d = date(v); return d ? p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + d.getFullYear() : '—'; };
@@ -1045,7 +1039,7 @@
       kpi({ ico: 'inbox', l: 'En attente de prise en charge', val: nombre(st.NOUVEAU), c: '--new', s: st.retard ? '<span class="dl bad">' + st.retard + ' depuis plus de ' + C.SEUIL_ALERTE_HEURES + ' h</span>' : 'pas encore ouverts par le Back Office', act: 'voir-etat', v: 'ouverts' }) +
       kpi({ ico: 'loader', l: 'En traitement', val: nombre(st.EN_COURS + st.ATTENTE), c: '--prog', s: st.ATTENTE ? st.ATTENTE + ' en attente de votre réponse' : 'CA, régularisation, relance…', act: 'voir-etat', v: 'ouverts' }) +
       kpi({ ico: 'circle-check', l: 'Résolus sur 30 jours', val: nombre(st30.TERMINE), c: '--done', s: st30.delaiMoyen !== null ? 'en ' + duree(st30.delaiMoyen) + ' en moyenne' : '—', act: 'voir-etat', v: 'clos' }) +
-      kpi({ ico: 'wallet', l: 'Montant en attente', val: compact(st.montantOuvert), u: 'FCFA', c: '--accent', s: 'sur ' + st.ouverts + ' incident(s) ouvert(s)' }) +
+      kpi({ ico: 'wallet', l: 'Montant en attente', val: nombre(st.montantOuvert), u: 'FCFA', c: '--accent', s: 'sur ' + st.ouverts + ' incident(s) ouvert(s)' }) +
       '</section>' +
 
       '<section><div class="sh"><h2 class="sh-t">' + ico('bell') + 'Dernières nouvelles' + (nonLus ? ' <span class="cnt">' + nonLus + ' non lue(s)</span>' : '') + '</h2><a href="#/suivi" class="lnk">Toutes mes déclarations ' + ico('arrow-right') + '</a></div>' +
@@ -1093,14 +1087,16 @@
       CLOS: base.filter(function (i) { return !estOuvert(i) && date(i.cloture_le || i.maj_le) >= il7; }),
     };
     if (!f.lane) f.lane = lanes.NOUVEAU.length ? 'NOUVEAU' : 'EN_COURS';
+    // Les rejets n'existent plus : ils ne s'affichent que pour d'anciens incidents.
+    const rejetes = lanes.CLOS.filter(function (i) { return i.statut === 'REJETE'; }).length;
     const retard = lanes.NOUVEAU.filter(function (i) { return heuresDepuis(i.cree_le) >= C.SEUIL_ALERTE_HEURES; }).length;
     const reponses = lanes.EN_COURS.filter(function (i) { return (S.meta[i.id] || {}).reponse; }).length;
     const montant = function (l) { return l.reduce(function (s, i) { return s + (Number(i.montant) || 0); }, 0); };
     const defs = [
-      { k: 'NOUVEAU', t: 'À prendre en charge', ico: 'inbox', c: '--new', s: retard ? '<b>' + retard + ' en retard</b> (&gt; ' + C.SEUIL_ALERTE_HEURES + ' h)' : compact(montant(lanes.NOUVEAU)) + ' FCFA' },
-      { k: 'EN_COURS', t: 'En traitement', ico: 'loader', c: '--prog', s: reponses ? reponses + ' réponse(s) du PDV à lire' : compact(montant(lanes.EN_COURS)) + ' FCFA' },
+      { k: 'NOUVEAU', t: 'À prendre en charge', ico: 'inbox', c: '--new', s: retard ? '<b>' + retard + ' en retard</b> (&gt; ' + C.SEUIL_ALERTE_HEURES + ' h)' : nombre(montant(lanes.NOUVEAU)) + ' FCFA' },
+      { k: 'EN_COURS', t: 'En traitement', ico: 'loader', c: '--prog', s: reponses ? reponses + ' réponse(s) du PDV à lire' : nombre(montant(lanes.EN_COURS)) + ' FCFA' },
       { k: 'ATTENTE', t: 'En attente du PDV', ico: 'message-circle-question', c: '--wait', s: 'information demandée' },
-      { k: 'CLOS', t: 'Clôturés (7 j)', ico: 'circle-check', c: '--done', s: lanes.CLOS.filter(function (i) { return i.statut === 'TERMINE'; }).length + ' résolus · ' + lanes.CLOS.filter(function (i) { return i.statut === 'REJETE'; }).length + ' rejetés' },
+      { k: 'CLOS', t: 'Clôturés (7 j)', ico: 'circle-check', c: '--done', s: lanes.CLOS.filter(function (i) { return i.statut === 'TERMINE'; }).length + ' résolus' + (rejetes ? ' · ' + rejetes + ' rejetés' : '') },
     ];
     const tris = {
       ancien: function (a, b) { return String(a.cree_le).localeCompare(String(b.cree_le)); },
@@ -1155,7 +1151,7 @@
 
       '<section class="kg">' +
       kpi({ ico: 'clipboard-list', l: 'Incidents déclarés', val: nombre(st.n), c: '--brand', s: (avant ? variation(st.n, avant.n) + ' vs période préc.' : 'sur la période') }) +
-      kpi({ ico: 'wallet', l: 'Montant concerné', val: compact(st.montant), u: 'FCFA', c: '--accent', s: 'dont ' + compact(st.montantOuvert) + ' FCFA encore ouverts' }) +
+      kpi({ ico: 'wallet', l: 'Montant concerné', val: nombre(st.montant), u: 'FCFA', c: '--accent', s: 'dont ' + nombre(st.montantOuvert) + ' FCFA encore ouverts' }) +
       kpi({ ico: 'gauge', l: 'Taux de traitement', val: st.taux, u: '%', c: '--done', s: st.traites + ' traité(s) sur ' + st.n + (avant && avant.n ? ' · ' + variation(st.taux, avant.taux, true) : '') }) +
       kpi({ ico: 'timer', l: 'Délai moyen de résolution', val: duree(st.delaiMoyen), c: '--prog', s: 'prise en charge en ' + duree(st.delaiPec) + ' en moyenne' }) +
       '</section>' +
@@ -1170,7 +1166,7 @@
 
       '<section class="cg">' +
       '<div class="card c8"><h3 class="ct">Déclarations et clôtures dans le temps</h3><p class="cs">Nombre d\'incidents déclarés et traités</p><div class="ch"><canvas id="cEvol"></canvas></div></div>' +
-      '<div class="card c4"><h3 class="ct">Montant par nature</h3><p class="cs">En FCFA, sur la période</p><div class="ch ring"><canvas id="cNature"></canvas><div class="ring-c"><b>' + compact(st.montant) + '</b><small>FCFA</small></div></div></div>' +
+      '<div class="card c4"><h3 class="ct">Montant par nature</h3><p class="cs">En FCFA, sur la période</p><div class="ch ring"><canvas id="cNature"></canvas><div class="ring-c"><b>' + nombre(st.montant) + '</b><small>FCFA</small></div></div></div>' +
       '<div class="card ' + (estBO() ? 'c6' : 'c12') + '"><h3 class="ct">Par moyen de paiement</h3><p class="cs">Incidents déclarés, par état</p><div class="ch"><canvas id="cOp"></canvas></div></div>' +
       (estBO() ? '<div class="card c6"><div class="sh" style="margin:0"><div><h3 class="ct">Points de vente les plus concernés</h3><p class="cs">Cliquez pour voir leurs incidents</p></div><a class="lnk" href="#/pdv">Synthèse ' + ico('arrow-right') + '</a></div>' + classementPdv(items) + '</div>' : '') +
       '</section>';
