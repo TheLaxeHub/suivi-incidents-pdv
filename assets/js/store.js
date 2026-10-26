@@ -103,7 +103,7 @@
         num_liquidation: f ? 'LQ' + Math.floor(hasard() * 1e7) : '',
         formalite: f ? pick(['Carte grise', 'Mutation', 'Duplicata', 'Visite technique']) : '',
         description: pick(descs[nat]),
-        solution: pick(f ? C.SOLUTIONS_FORMALITE.slice(0, 4) : C.SOLUTIONS_MOBILE_MONEY.slice(0, 5)),
+        solution: 'À définir par le Back Office',
         statut: 'NOUVEAU', derniere_action: 'Déclaration', cree_le: iso(cree), maj_le: iso(cree), cloture_le: '',
       };
       incidents.push(inc);

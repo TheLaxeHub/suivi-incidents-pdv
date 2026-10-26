@@ -46,15 +46,15 @@
 
   const VUES = {
     pdv: [
-      { id: 'accueil', libelle: 'Accueil', ico: 'house' },
-      { id: 'suivi', libelle: 'Mes déclarations', ico: 'list-checks' },
-      { id: 'stats', libelle: 'Statistiques', ico: 'chart-column' },
+      { id: 'accueil', libelle: 'Accueil', ico: 'house', desc: 'Déclarez un incident et suivez les réponses du Back Office.' },
+      { id: 'suivi', libelle: 'Mes déclarations', ico: 'list-checks', desc: 'Toutes vos déclarations et leur avancement.' },
+      { id: 'stats', libelle: 'Statistiques', ico: 'chart-column', desc: 'Les indicateurs de vos incidents sur la période choisie.' },
     ],
     bo: [
-      { id: 'file', libelle: 'File de traitement', court: 'File', ico: 'inbox' },
-      { id: 'pilotage', libelle: 'Pilotage', ico: 'layout-dashboard' },
-      { id: 'registre', libelle: 'Registre', ico: 'table' },
-      { id: 'pdv', libelle: 'Synthèse par PDV', court: 'PDV', ico: 'store' },
+      { id: 'file', libelle: 'File de traitement', court: 'File', ico: 'inbox', desc: 'Les incidents à prendre en charge et à traiter.' },
+      { id: 'pilotage', libelle: 'Pilotage', ico: 'layout-dashboard', desc: 'Les indicateurs de tous les points de vente.' },
+      { id: 'registre', libelle: 'Registre', ico: 'table', desc: 'Tous les incidents, triables, filtrables et exportables.' },
+      { id: 'pdv', libelle: 'Synthèse par PDV', court: 'PDV', ico: 'store', desc: 'La situation de chaque point de vente.' },
     ],
   };
   // Anciennes ancres de la version précédente.
@@ -531,12 +531,17 @@
     $('#sbAv').textContent = bo ? (u ? initiales(u.nom) : 'BO') : moi().charAt(0);
     $('#sbAv').className = 'av' + (bo ? ' bo' : '');
     $('#sbName').textContent = bo ? (u ? u.nom : 'Back Office') : moi();
-    $('#sbRole').textContent = bo ? (u ? u.poste + ' · Back Office' : C.POINTS_DE_VENTE.length + ' points de vente') : 'Point de vente';
-    $('#topEyebrow').textContent = bo ? 'Back Office · ' + (u ? u.nom : 'E-Money') : 'Point de vente ' + moi();
+    $('#sbRole').textContent = bo ? (u ? u.email : C.POINTS_DE_VENTE.length + ' points de vente') : 'Point de vente';
+    $('#sbRole').title = bo && u ? u.poste + ' · Back Office' : '';
+    $('#topEyebrow').textContent = bo ? 'Back Office' : 'Point de Vente';
+    $('#phPill').textContent = bo ? (u ? u.nom : 'Back Office') : moi();
     $('#demoBar').hidden = !Store.demo;
-    $('#sbNav').innerHTML = '<p class="sb-lbl">' + (bo ? 'Traitement' : 'Mon espace') + '</p>' + vues().map(function (v) {
-      return '<a href="#/' + v.id + '" class="sb-a" data-vue="' + v.id + '">' + ico(v.ico) + v.libelle + '<span class="cnt" data-cnt="' + v.id + '" hidden></span></a>';
-    }).join('');
+    // Menu à la manière d'iris : groupe « E - Money », entrée dépliable, sous-menu à trait vertical.
+    $('#sbNav').innerHTML = '<p class="sb-lbl">E - Money</p><div class="sb-grp open">' +
+      '<button type="button" class="sb-par on" data-grp aria-expanded="true">' + ico(bo ? 'radio' : 'house') + '<span>' + (bo ? 'Back Office' : 'Point de Vente') + '</span>' + ico('chevron-down', 'sb-chev') + '</button>' +
+      '<div class="sb-sub">' + vues().map(function (v) {
+        return '<a href="#/' + v.id + '" class="sb-a" data-vue="' + v.id + '">' + ico(v.ico) + v.libelle + '<span class="cnt" data-cnt="' + v.id + '" hidden></span></a>';
+      }).join('') + '</div></div>';
     $('#tabbar').innerHTML = vues().map(function (v) {
       return '<a href="#/' + v.id + '" data-vue="' + v.id + '">' + ico(v.ico) + (v.court || v.libelle.replace('Mes déclarations', 'Suivi')) + '<span class="cnt" data-cnt="' + v.id + '" hidden></span></a>';
     }).join('');
@@ -547,6 +552,13 @@
     appInitialisee = true;
 
     window.addEventListener('hashchange', function () { if (S.session) router(); });
+    $('#sbNav').addEventListener('click', function (e) {
+      const b = e.target.closest('[data-grp]');
+      if (!b) return;
+      const g = b.parentElement;
+      g.classList.toggle('open');
+      b.setAttribute('aria-expanded', g.classList.contains('open') ? 'true' : 'false');
+    });
     document.addEventListener('click', clicGlobal);
     document.addEventListener('keydown', clavier);
     $('#btnRefresh').addEventListener('click', function () { actualiser(); });
@@ -709,6 +721,9 @@
     if (!S.session) return;
     const v = vues().find(function (x) { return x.id === S.vue; }) || vues()[0];
     $('#topTitle').textContent = v.libelle;
+    $('#phTitle').textContent = v.libelle;
+    $('#phSub').textContent = v.desc || '';
+    $('#phIco').innerHTML = ico(v.ico);
     document.title = (compteurs().total ? '(' + compteurs().total + ') ' : '') + v.libelle + ' — ' + C.APP_TITRE;
     $$('[data-vue]').forEach(function (a) { a.classList.toggle('on', a.dataset.vue === v.id); });
     majCompteurs();
@@ -1014,7 +1029,7 @@
     return '<section class="hero">' +
       '<div><h2>' + salut + ', ' + esc(moi()) + '</h2><p>' +
       (st.ouverts ? st.ouverts + ' incident(s) en cours de traitement pour ' + fcfa(st.montantOuvert) + '.' : 'Aucun incident en cours. Tout est en ordre.') +
-      '</p><p style="margin-top:14px;font-size:13px;color:#93a6d3">Un problème avec un paiement ? Choisissez son type pour le déclarer :</p></div>' +
+      '</p><p class="hero-hint">Un problème avec un paiement ? Choisissez son type pour le déclarer :</p></div>' +
       '<div class="hero-q">' +
       '<button type="button" data-new="DEPOT"><span class="hi">' + ico('arrow-down-to-line') + '</span><span>Dépôt<small>Mobile Money</small></span></button>' +
       '<button type="button" data-new="RETRAIT"><span class="hi">' + ico('arrow-up-from-line') + '</span><span>Retrait<small>Mobile Money</small></span></button>' +
@@ -1420,11 +1435,12 @@
         it('N° de liquidation', i.num_liquidation ? '<span class="mono">' + esc(i.num_liquidation) + '</span>' : '', false, i.num_liquidation),
         it('Moyen de paiement', i.operateur ? pastilleOp(i.operateur) : 'Espèces / autre'),
         it("Date de l'opération", fDateHeure(i.date_operation)), it('Déclaré le', fDateHeure(i.cree_le)),
-        it('Solution demandée', esc(i.solution), 2), it('Déclaré par', esc(declarePar(i)))]
+        it('Déclaré par', esc(declarePar(i)), true)]
       : [it('Opérateur', pastilleOp(i.operateur)), it("Date de l'opération", fDateHeure(i.date_operation)),
         it('N° client', i.telephone ? '<span class="mono">' + esc(i.telephone) + '</span>' : '', false, i.telephone),
         it('Référence transaction', i.reference ? '<span class="mono">' + esc(i.reference) + '</span>' : '', 2, i.reference),
-        it('Déclaré le', fDateHeure(i.cree_le)), it('Solution demandée', esc(i.solution), 2), it('Déclaré par', esc(declarePar(i)))];
+        it('Déclaré le', fDateHeure(i.cree_le)), it('Déclaré par', esc(declarePar(i)), true)];
+    if (i.solution && i.solution !== SOLUTION_PAR_DEFAUT) champs.push(it('Solution souhaitée par le PDV', esc(i.solution), true));
 
     // Suivi en 4 étapes
     const st = etape(i);
@@ -1727,7 +1743,6 @@
       if (t.classList) t.classList.remove('err');
       if (t.name === 'operateur') $('#nOps').classList.remove('err');
       if (t.name === 'incident') $('#nIncident').classList.remove('err');
-      if (t.name === 'solution') $('#nSolution').classList.remove('err');
       if (t.id === 'nMontant') {
         const brut = t.value.replace(/\D/g, '').replace(/^0+/, '');
         t.value = brut ? nombre(brut) : '';
@@ -1737,7 +1752,7 @@
       majTicket();
     });
     $('#fNew').addEventListener('change', function (e) {
-      if (e.target.name === 'operateur' || e.target.name === 'incident' || e.target.name === 'solution') sauverBrouillon();
+      if (e.target.name === 'operateur' || e.target.name === 'incident') sauverBrouillon();
       majTicket();
     });
     $('#nQuickDate').addEventListener('click', function (e) {
@@ -1768,6 +1783,7 @@
     $('#nOkAgain').addEventListener('click', function () { ouvrirDeclaration(''); });
   }
 
+  const SOLUTION_PAR_DEFAUT = 'À définir par le Back Office';
   function natureChoisie() { return ($('#fNew [name=nature]:checked') || {}).value || ''; }
   const valeurRadio = function (nom) { return ($('#fNew [name=' + nom + ']:checked') || {}).value || ''; };
 
@@ -1787,7 +1803,8 @@
       num_liquidation: formalite ? f.num_liquidation.value.trim() : '',
       formalite: formalite ? f.formalite.value.trim() : '',
       description: f.description.value.trim(),
-      solution: valeurRadio('solution'),
+      // Plus demandée au point de vente : c'est le Back Office qui choisit la solution.
+      solution: SOLUTION_PAR_DEFAUT,
       // Pas de nom d'agent à saisir : la déclaration est faite au nom du point de vente.
       declarant: moi(),
     };
@@ -1813,7 +1830,6 @@
     }
     if (k === 3) {
       exiger(d.description, f.description, "ce qui s'est passé");
-      exiger(d.solution, $('#nSolution'), 'la solution demandée');
     }
     return manquants;
   }
@@ -1869,22 +1885,29 @@
 
   function rendreRecap() {
     const d = donneesDeclaration();
-    const it = function (l, v, large) {
-      return '<div class="pi' + (large ? ' w' : '') + '"><div class="pil">' + l + '</div><div class="piv">' + (v || '<span class="z">—</span>') + '</div></div>';
+    const nat = natureChoisie();
+    const n = NATURES[nat];
+    const ligne = function (l, v, icone) {
+      return '<div class="rc-r"><dt>' + ico(icone) + l + '</dt><dd>' + (v || '<span class="z">Non renseigné</span>') + '</dd></div>';
     };
-    const n = NATURES[natureChoisie()];
-    const champs = [];
-    if (d.categorie === 'FORMALITE') {
-      champs.push(it('Incident survenu', esc(d.incident)), it('N° de liquidation', '<span class="mono">' + esc(d.num_liquidation) + '</span>'),
-        it('Formalité voulue', esc(d.formalite)), it('Moyen de paiement', d.operateur ? pastilleOp(d.operateur) : 'Espèces / autre'));
-    } else {
-      champs.push(it('Opérateur', pastilleOp(d.operateur)), it("Date de l'opération", fDateHeure(d.date_operation)),
-        it('N° client', d.telephone ? '<span class="mono">' + esc(d.telephone) + '</span>' : ''), it('Référence transaction', d.reference ? '<span class="mono">' + esc(d.reference) + '</span>' : ''));
-    }
-    if (d.categorie === 'FORMALITE') champs.push(it("Date de l'opération", fDateHeure(d.date_operation), true));
-    champs.push(it("Ce qui s'est passé", esc(d.description), true), it('Solution demandée', esc(d.solution), true));
-    $('#nRecap').innerHTML = '<div class="recap-h"><span class="nat-i n-' + natureChoisie() + '">' + ico(n.ico) + '</span><div><div class="eyebrow">' + n.libelle + '</div><div class="p-amt">' + nombre(d.montant) + '<small>FCFA</small></div></div>' +
-      '<button type="button" class="btn bg btn-sm recap-e" data-goto="2">' + ico('pencil') + 'Modifier</button></div><div class="pg">' + champs.join('') + '</div>';
+    const lignes = d.categorie === 'FORMALITE'
+      ? [ligne('Incident', esc(d.incident), 'file-warning'), ligne('Formalité voulue', esc(d.formalite), 'file-text'),
+        ligne('N° de liquidation', '<span class="mono">' + esc(d.num_liquidation) + '</span>', 'hash'),
+        ligne('Moyen de paiement', d.operateur ? pastilleOp(d.operateur) : 'Espèces / autre', 'wallet'),
+        ligne("Date de l'opération", fDateHeure(d.date_operation), 'calendar-clock')]
+      : [ligne('Opérateur', pastilleOp(d.operateur), 'smartphone'), ligne("Date de l'opération", fDateHeure(d.date_operation), 'calendar-clock'),
+        ligne('N° du client', d.telephone ? '<span class="mono">' + esc(d.telephone) + '</span>' : '', 'phone'),
+        ligne('Référence', d.reference ? '<span class="mono">' + esc(d.reference) + '</span>' : '', 'hash')];
+    const sousTitreRecap = d.categorie === 'FORMALITE' ? 'Paiement de formalité' : 'Mobile Money · ' + (d.operateur ? operateur(d.operateur).nom : '');
+    $('#nRecap').innerHTML =
+      '<div class="rc-top n-' + nat + '"><span class="rc-nat">' + ico(n.ico) + '</span>' +
+      '<div class="rc-tt"><small>' + n.libelle + ' · ' + esc(sousTitreRecap) + '</small><div class="rc-amt">' + nombre(d.montant) + '<small>FCFA</small></div></div>' +
+      '<div class="rc-pdv"><small>Point de vente</small><b>' + esc(moi()) + '</b></div></div>' +
+      '<div class="rc-grid">' +
+      '<div class="rc-sec"><div class="rc-h"><b>' + ico('receipt-text') + 'Opération</b><button type="button" class="rc-e" data-goto="2">' + ico('pencil') + 'Modifier</button></div><dl>' + lignes.join('') + '</dl></div>' +
+      '<div class="rc-sec"><div class="rc-h"><b>' + ico('message-square-text') + 'Explication</b><button type="button" class="rc-e" data-goto="3">' + ico('pencil') + 'Modifier</button></div><p class="rc-txt">' + esc(d.description) + '</p></div>' +
+      '</div>' +
+      '<div class="rc-note">' + ico('send') + '<span>En envoyant, l\'incident est transmis au <b>Back Office</b>. Vous suivrez chaque étape du traitement depuis <b>Mes déclarations</b>.</span></div>';
 
     // Doublons possibles : même référence / liquidation, ou même opération à quelques heures près.
     const dop = date(d.date_operation);
@@ -1924,11 +1947,6 @@
     const formalite = n === 'FORMALITE';
     $('#mNew').classList.toggle('n-mm', !formalite);
     $('#mNew').classList.toggle('n-f', formalite);
-    const solutions = formalite ? C.SOLUTIONS_FORMALITE : C.SOLUTIONS_MOBILE_MONEY;
-    const avant = valeurRadio('solution');
-    $('#nSolution').innerHTML = solutions.map(function (x) {
-      return '<label><input type="radio" name="solution" value="' + esc(x) + '"' + (x === avant ? ' checked' : '') + '><span>' + esc(x) + '</span></label>';
-    }).join('');
     $('#nTpl').innerHTML = (MODELES[n] || []).map(function (t) { return '<button type="button">' + esc(t) + '</button>'; }).join('');
     const espece = $('#nOps input[value=""]');
     if (!formalite && espece.checked) espece.checked = false;
@@ -1954,7 +1972,6 @@
     appliquerNature(b.nature);
     radio('operateur', b.operateur);
     radio('incident', b.incident);
-    radio('solution', b.solution);
     ['montant', 'telephone', 'reference', 'num_liquidation', 'formalite', 'description', 'date_operation'].forEach(function (k) { if (b[k] && f[k]) f[k].value = b[k]; });
   }
 
@@ -1967,7 +1984,6 @@
     $('#mNewPdv').textContent = 'Nouvelle déclaration · ' + moi();
     $('#nDate').value = dateLocale(new Date());
     $('#nDate').max = dateLocale(new Date(Date.now() + 5 * 6e4));
-    $('#nSolution').innerHTML = '';
     $('#nDraft').innerHTML = '';
     $('#nDescN').textContent = '0 / 2000';
     incidentCree = null;

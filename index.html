@@ -8,8 +8,8 @@
 <meta name="theme-color" content="#0b1f4d">
 <link rel="icon" type="image/png" href="assets/img/logo-qfs.png">
 <link rel="preconnect" href="https://fonts.bunny.net">
-<link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800|jetbrains-mono:500" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=20261026c">
+<link href="https://fonts.bunny.net/css?family=public-sans:400,500,600,700|jetbrains-mono:500" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css?v=20261027e">
 <script>
   // Thème appliqué avant l'affichage pour éviter un flash.
   try { const t = localStorage.getItem('sip_theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) { /* stockage indisponible */ }
@@ -99,7 +99,7 @@
 <!-- ================= APPLICATION ================= -->
 <div class="shell" id="app" hidden>
   <aside class="sb" id="sb">
-    <div class="sb-head"><img src="assets/img/logo-qfs.png" alt="Quipux Financial Services"><span class="sb-app">Incidents<br>de paiement</span></div>
+    <div class="sb-head"><img src="assets/img/logo-qfs.png" alt="Quipux Financial Services"><span class="sb-app">Incidents de paiement</span></div>
     <button type="button" class="btn bp sb-cta pdv-only" data-new><i data-lucide="plus"></i>Déclarer un incident<kbd>N</kbd></button>
     <nav class="sb-nav" id="sbNav"></nav>
     <div class="sb-foot">
@@ -115,7 +115,7 @@
     <header class="top">
       <div class="top-l">
         <img class="top-logo" src="assets/img/logo-qfs.png" alt="">
-        <div><p class="eyebrow" id="topEyebrow"></p><h1 class="top-t" id="topTitle"></h1></div>
+        <nav class="bc" aria-label="Fil d'Ariane"><span class="bc-x">E - Money</span><i data-lucide="chevron-right" class="bc-x"></i><span class="bc-x" id="topEyebrow"></span><i data-lucide="chevron-right" class="bc-x"></i><b id="topTitle"></b></nav>
       </div>
       <div class="top-r">
         <button type="button" class="srch-btn" id="btnSearch"><i data-lucide="search"></i><span>Rechercher un incident…</span><kbd>Ctrl K</kbd></button>
@@ -126,6 +126,7 @@
 
     <div class="demo-bar" id="demoBar" hidden><i data-lucide="flask-conical"></i>Mode démonstration — données fictives, rien n'est enregistré.</div>
 
+    <div class="ph"><span class="ph-i" id="phIco"></span><div><h1 class="ph-t"><span id="phTitle"></span><span class="ph-pill" id="phPill"></span></h1><p class="ph-s" id="phSub"></p></div></div>
     <main class="main" id="view"></main>
   </div>
 
@@ -191,43 +192,53 @@
         </section>
 
         <section class="nstep" data-step="2" hidden>
-          <div class="only-f">
-            <label class="fl">Incident survenu *</label>
+          <div class="fs only-f">
+            <div class="fs-h"><span class="fs-i"><i data-lucide="file-warning"></i></span><b>Incident de formalité</b><small>ce qui s'est produit</small></div>
             <div class="chs" id="nIncident" data-name="incident"></div>
-          </div>
-          <div class="only-f fr">
-            <div class="fcol"><label class="fl" for="nLiq">N° de liquidation *</label><div class="ix"><i data-lucide="hash"></i><input class="in mono" id="nLiq" name="num_liquidation" autocomplete="off" placeholder="LQ0000000"></div></div>
-            <div class="fcol"><label class="fl" for="nFormalite">Formalité voulue *</label><div class="ix"><i data-lucide="file-text"></i><input class="in" id="nFormalite" name="formalite" list="dlFormalites" autocomplete="off" placeholder="Ex. : carte grise"></div><datalist id="dlFormalites"></datalist></div>
-          </div>
-
-          <label class="fl"><span class="only-mm">Opérateur *</span><span class="only-f">Moyen de paiement utilisé (facultatif)</span></label>
-          <div class="ops" id="nOps"></div>
-
-          <div class="fr">
-            <div class="fcol">
-              <label class="fl" for="nMontant">Montant *</label>
-              <div class="amt-in"><input class="in" id="nMontant" name="montant" inputmode="numeric" autocomplete="off" placeholder="0"><span>FCFA</span></div>
+            <div class="fr fr-t">
+              <div class="fcol"><label class="fl" for="nLiq">N° de liquidation *</label><div class="ix"><i data-lucide="hash"></i><input class="in mono" id="nLiq" name="num_liquidation" autocomplete="off" placeholder="LQ0000000"></div></div>
+              <div class="fcol"><label class="fl" for="nFormalite">Formalité voulue *</label><div class="ix"><i data-lucide="file-text"></i><input class="in" id="nFormalite" name="formalite" list="dlFormalites" autocomplete="off" placeholder="Ex. : carte grise"></div><datalist id="dlFormalites"></datalist></div>
             </div>
-            <div class="fcol">
-              <label class="fl" for="nDate">Date et heure de l'opération *</label>
-              <input class="in" id="nDate" name="date_operation" type="datetime-local">
-              <div class="qd" id="nQuickDate">
-                <button type="button" data-h="0">Maintenant</button><button type="button" data-h="1">Il y a 1 h</button><button type="button" data-h="3">Il y a 3 h</button><button type="button" data-h="24">Hier</button>
+          </div>
+
+          <div class="fs">
+            <div class="fs-h"><span class="fs-i"><i data-lucide="smartphone"></i></span><b class="only-mm">Opérateur *</b><b class="only-f">Moyen de paiement</b><small class="only-mm">le service utilisé par le client</small><small class="only-f">facultatif</small></div>
+            <div class="ops" id="nOps"></div>
+          </div>
+
+          <div class="fs">
+            <div class="fs-h"><span class="fs-i"><i data-lucide="banknote"></i></span><b>Montant et date</b><small>tels qu'indiqués sur le reçu</small></div>
+            <div class="fr">
+              <div class="fcol">
+                <label class="fl" for="nMontant">Montant *</label>
+                <div class="amt-in"><input class="in" id="nMontant" name="montant" inputmode="numeric" autocomplete="off" placeholder="0"><span>FCFA</span></div>
+              </div>
+              <div class="fcol">
+                <label class="fl" for="nDate">Date et heure de l'opération *</label>
+                <div class="ix"><i data-lucide="calendar-clock"></i><input class="in" id="nDate" name="date_operation" type="datetime-local"></div>
+                <div class="qd" id="nQuickDate">
+                  <button type="button" data-h="0">Maintenant</button><button type="button" data-h="1">Il y a 1 h</button><button type="button" data-h="3">Il y a 3 h</button><button type="button" data-h="24">Hier</button>
+                </div>
               </div>
             </div>
           </div>
-          <div class="only-mm fr">
-            <div class="fcol"><label class="fl" for="nTel">N° de téléphone / compte du client</label><div class="ix"><i data-lucide="smartphone"></i><input class="in mono" id="nTel" name="telephone" inputmode="tel" autocomplete="off" placeholder="07 00 00 00 00"></div></div>
-            <div class="fcol"><label class="fl" for="nRef">Référence / ID de la transaction <span class="rec">conseillé</span></label><div class="ix"><i data-lucide="hash"></i><input class="in mono" id="nRef" name="reference" autocomplete="off" placeholder="Ex. : MP240101.1234.A12345"></div></div>
+
+          <div class="fs only-mm">
+            <div class="fs-h"><span class="fs-i"><i data-lucide="receipt-text"></i></span><b>Client et transaction</b><small>la référence accélère le traitement</small></div>
+            <div class="fr">
+              <div class="fcol"><label class="fl" for="nTel">N° de téléphone / compte du client</label><div class="ix"><i data-lucide="phone"></i><input class="in mono" id="nTel" name="telephone" inputmode="tel" autocomplete="off" placeholder="07 00 00 00 00"></div></div>
+              <div class="fcol"><label class="fl" for="nRef">Référence de la transaction <span class="rec">conseillé</span></label><div class="ix"><i data-lucide="hash"></i><input class="in mono" id="nRef" name="reference" autocomplete="off" placeholder="Ex. : MP240101.1234.A12345"></div></div>
+            </div>
           </div>
         </section>
 
         <section class="nstep" data-step="3" hidden>
-          <label class="fl" for="nDesc">Expliquez ce qui s'est passé *</label>
-          <div class="tpl" id="nTpl"></div>
-          <div class="ta"><textarea class="in" id="nDesc" name="description" rows="4" maxlength="2000" placeholder="Décrivez l'incident en quelques mots…"></textarea><span class="ta-n" id="nDescN">0 / 2000</span></div>
-          <label class="fl">Solution demandée *</label>
-          <div class="chs" id="nSolution" data-name="solution"></div>
+          <div class="fs">
+            <div class="fs-h"><span class="fs-i"><i data-lucide="message-square-text"></i></span><b>Expliquez ce qui s'est passé *</b><small>en quelques mots</small></div>
+            <div class="tpl" id="nTpl"></div>
+            <div class="ta"><textarea class="in" id="nDesc" name="description" rows="7" maxlength="2000" placeholder="Ex. : le client a été débité mais n'a pas reçu l'argent sur son compte…"></textarea><span class="ta-n" id="nDescN">0 / 2000</span></div>
+          </div>
+          <div class="wz-tip"><i data-lucide="info"></i><span>Le Back Office choisit la solution adaptée (remboursement, régularisation…) et vous tient informé à chaque étape.</span></div>
         </section>
 
         <section class="nstep" data-step="4" hidden>
@@ -268,8 +279,8 @@
 <div class="ld" id="loader" hidden><div class="ld-s"></div></div>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
-<script src="assets/js/config.js?v=20261026c"></script>
-<script src="assets/js/store.js?v=20261026c"></script>
-<script src="assets/js/app.js?v=20261026c"></script>
+<script src="assets/js/config.js?v=20261027e"></script>
+<script src="assets/js/store.js?v=20261027e"></script>
+<script src="assets/js/app.js?v=20261027e"></script>
 </body>
 </html>

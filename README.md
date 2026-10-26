@@ -34,7 +34,7 @@ Pour ajouter ou retirer un agent : modifiez `BO_UTILISATEURS` **à la fois** dan
 - **Déclarer un incident** — assistant en 4 étapes, sans défilement, avec les étapes à gauche et un **ticket récapitulatif mis à jour en direct** :
   - *Dépôt / Retrait* : opérateur, montant (saisi avec séparateurs), date et heure (raccourcis « Maintenant », « Hier »…), n° du client, référence de la transaction.
   - *Paiement de formalité* : incident survenu, n° de liquidation, formalité voulue, montant, moyen de paiement.
-  - Explication (phrases types proposées) et solution demandée, puis vérification avec **alerte de doublon** si un incident proche existe déjà. Un brouillon est conservé si l'assistant est fermé.
+  - Explication (phrases types proposées), puis vérification avec **alerte de doublon** si un incident proche existe déjà. Un brouillon est conservé si l'assistant est fermé.
 - **Mes déclarations** : en cours / clôturés, recherche, suivi en 4 étapes (Déclaré → Pris en charge → En traitement → Résolu), réponse au Back Office depuis le détail.
 - **Statistiques** du PDV.
 
@@ -113,7 +113,6 @@ Tout se règle dans [`assets/js/config.js`](assets/js/config.js) :
 | `POINTS_DE_VENTE` | Liste des PDV affichés à la connexion. Pour un nouveau PDV, ajoutez-le aussi dans l'onglet `Acces`. |
 | `OPERATEURS` | Opérateurs Mobile Money (code, nom, couleur). |
 | `INCIDENTS_FORMALITE`, `FORMALITES` | Incidents proposés et suggestions de formalités. |
-| `SOLUTIONS_MOBILE_MONEY`, `SOLUTIONS_FORMALITE` | Solutions que le PDV peut demander. |
 | `ACTIONS_BO` | Actions du Back Office et statut qu'elles donnent. **À garder identique à `ACTIONS` dans `apps-script/Code.gs`.** |
 | `SEUIL_ALERTE_HEURES`, `SEUIL_MONTANT_ELEVE` | Seuils des alertes. |
 | `ACTUALISATION_SECONDES` | Rafraîchissement automatique des données (mode en ligne). |

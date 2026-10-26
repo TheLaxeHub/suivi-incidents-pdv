@@ -342,7 +342,6 @@ function valider_(d) {
   if (!/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(inc.date_operation)) throw erreur_('VALIDATION', "Date de l'opération invalide.");
   if (!(inc.montant > 0)) throw erreur_('VALIDATION', 'Le montant doit être supérieur à 0.');
   if (!inc.description) throw erreur_('VALIDATION', 'Expliquez ce qui s\'est passé.');
-  if (!inc.solution) throw erreur_('VALIDATION', 'Choisissez la solution demandée.');
   return inc;
 }
 

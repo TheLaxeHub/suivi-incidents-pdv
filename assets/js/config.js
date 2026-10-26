@@ -53,23 +53,6 @@ window.APP_CONFIG = {
   // Suggestions pour le champ « Formalité voulue » (complétées par les saisies déjà faites).
   FORMALITES: [],
 
-  // Solutions que le point de vente peut demander.
-  SOLUTIONS_MOBILE_MONEY: [
-    'Remboursement du client',
-    "Annulation de l'opération",
-    "Finalisation / validation de l'opération",
-    'Régularisation du compte (re-crédit)',
-    "Vérification du statut auprès de l'opérateur",
-    'Autre',
-  ],
-  SOLUTIONS_FORMALITE: [
-    'Remboursement du client',
-    'Génération / validation de la formalité',
-    'Annulation du débit',
-    'Régularisation',
-    'Autre',
-  ],
-
   // Actions de suivi du Back Office et statut qu'elles donnent à l'incident
   // (null = le statut ne change pas). À garder identique à ACTIONS dans apps-script/Code.gs.
   ACTIONS_BO: [
