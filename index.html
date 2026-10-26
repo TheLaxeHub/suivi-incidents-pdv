@@ -9,7 +9,7 @@
 <link rel="icon" type="image/png" href="assets/img/logo-qfs.png">
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=public-sans:400,500,600,700|jetbrains-mono:500" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=20261027l">
+<link rel="stylesheet" href="assets/css/style.css?v=20261027n">
 <script>
   // Thème appliqué avant l'affichage pour éviter un flash.
   try { const t = localStorage.getItem('sip_theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) { /* stockage indisponible */ }
@@ -163,10 +163,13 @@
         <li data-step="4"><span class="stp-n">4</span><span class="stp-l">Envoi<small>Vérification finale</small></span></li>
       </ol>
       <div class="tk" id="nLive">
-        <div class="tk-h"><span class="tk-i" id="tkIco"><i data-lucide="receipt"></i></span><div><small id="tkNat">Nouvel incident</small><b id="tkOp">—</b></div></div>
+        <div class="tk-top"><span class="tk-i" id="tkIco"><i data-lucide="receipt"></i></span><span class="tk-nat" id="tkNat">Nouvel incident</span></div>
         <div class="tk-amt"><span id="tkAmt">0</span><small>FCFA</small></div>
-        <div class="tk-row"><i data-lucide="calendar"></i><span id="tkDate">—</span></div>
-        <div class="tk-row"><i data-lucide="hash"></i><span id="tkRef">Référence à préciser</span></div>
+        <dl class="tk-dl">
+          <div><dt>Moyen de paiement</dt><dd id="tkOp"></dd></div>
+          <div><dt>Date</dt><dd id="tkDate"></dd></div>
+          <div id="tkRefRow" hidden><dt id="tkRefL">Référence</dt><dd class="mono" id="tkRef"></dd></div>
+        </dl>
       </div>
     </aside>
 
@@ -227,7 +230,7 @@
             <div class="fs-h"><span class="fs-i"><i data-lucide="receipt-text"></i></span><b>Client et transaction</b><small>la référence accélère le traitement</small></div>
             <div class="fr">
               <div class="fcol"><label class="fl" for="nTel">N° de téléphone / compte du client</label><div class="ix"><i data-lucide="phone"></i><input class="in mono" id="nTel" name="telephone" inputmode="tel" autocomplete="off" placeholder="07 00 00 00 00"></div></div>
-              <div class="fcol"><label class="fl" for="nRef">Référence de la transaction <span class="rec">conseillé</span></label><div class="ix"><i data-lucide="hash"></i><input class="in mono" id="nRef" name="reference" autocomplete="off" placeholder="Ex. : MP240101.1234.A12345"></div></div>
+              <div class="fcol"><label class="fl" for="nRef">Référence de la transaction <span class="rec">conseillé</span></label><div class="ix"><i data-lucide="hash"></i><input class="in mono" id="nRef" name="reference" autocomplete="off"></div></div>
             </div>
           </div>
         </section>
@@ -279,8 +282,8 @@
 <div class="ld" id="loader" hidden><div class="ld-s"></div></div>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
-<script src="assets/js/config.js?v=20261027l"></script>
-<script src="assets/js/store.js?v=20261027l"></script>
-<script src="assets/js/app.js?v=20261027l"></script>
+<script src="assets/js/config.js?v=20261027n"></script>
+<script src="assets/js/store.js?v=20261027n"></script>
+<script src="assets/js/app.js?v=20261027n"></script>
 </body>
 </html>

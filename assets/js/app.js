@@ -155,12 +155,9 @@
 
   const libelleEtat = function (e) { const d = ETATS[e] || ETATS.NOUVEAU; return !estBO() && d.libellePdv ? d.libellePdv : d.libelle; };
   const badge = function (e) { return '<span class="badge s-' + e + '">' + libelleEtat(e) + '</span>'; };
-  const logoOp = function (o) {
-    return '<span class="op-l" style="background:' + esc(o.couleur) + '">' + esc(o.nom.replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase()) + '</span>';
-  };
   const pastilleOp = function (code) {
     const o = operateur(code);
-    return o ? '<span class="op">' + logoOp(o) + esc(o.nom) + '</span>' : '<span class="z">—</span>';
+    return o ? '<span class="op">' + esc(o.nom) + '</span>' : '<span class="z">—</span>';
   };
   const icoNature = function (i) {
     const n = NATURES[nature(i)] || NATURES.DEPOT;
@@ -1334,7 +1331,7 @@
           '<td class="nw"><span class="mono">' + esc(i.id) + '</span></td>' +
           '<td class="nw">' + fDate(i.cree_le) + '<div class="sub">' + fHeure(i.cree_le) + '</div></td>' +
           '<td><b>' + esc(i.pdv) + '</b></td>' +
-          '<td><div class="op">' + (operateur(i.operateur) ? logoOp(operateur(i.operateur)) : '') + '<span>' + esc(NATURES[nature(i)] ? NATURES[nature(i)].libelle : '') + '<div class="sub">' + esc(i.categorie === 'FORMALITE' ? i.incident : (operateur(i.operateur) || {}).nom) + '</div></span></div></td>' +
+          '<td><div class="op"><span>' + esc(NATURES[nature(i)] ? NATURES[nature(i)].libelle : '') + '<div class="sub">' + esc(i.categorie === 'FORMALITE' ? i.incident : (operateur(i.operateur) || {}).nom) + '</div></span></div></td>' +
           '<td class="mono">' + (reference(i) ? esc(reference(i)) : '<span class="z">—</span>') + '</td>' +
           '<td class="num"><b>' + nombre(i.montant) + '</b></td>' +
           '<td class="nw">' + badge(etat(i)) + '<div class="sub" style="margin-top:4px">' + tagAge(i) + '</div></td>' +
@@ -1746,7 +1743,7 @@
 
   function initDeclaration() {
     $('#nOps').innerHTML = C.OPERATEURS.map(function (o) {
-      return '<label style="--opc:' + esc(o.couleur) + '"><input type="radio" name="operateur" value="' + esc(o.code) + '"><span>' + logoOp(o) + '<b>' + esc(o.nom) + '</b></span></label>';
+      return '<label style="--opc:' + esc(o.couleur) + '"><input type="radio" name="operateur" value="' + esc(o.code) + '"><span><b>' + esc(o.nom) + '</b></span></label>';
     }).join('');
     $('#nIncident').innerHTML = C.INCIDENTS_FORMALITE.map(function (x) { return '<label><input type="radio" name="incident" value="' + esc(x) + '"><span>' + esc(x) + '</span></label>'; }).join('');
 
@@ -1961,12 +1958,14 @@
     $('#tkIco').className = 'tk-i' + (n ? ' n-' + natureChoisie() : '');
     $('#tkIco').innerHTML = ico(n ? n.ico : 'receipt');
     $('#tkNat').textContent = n ? n.libelle + (d.categorie === 'FORMALITE' && d.incident ? ' · ' + d.incident : '') : 'Nouvel incident';
-    $('#tkOp').innerHTML = op ? logoOp(op) + esc(op.nom) : (d.categorie === 'FORMALITE' ? esc(d.formalite || 'Formalité à préciser') : 'Moyen de paiement à choisir');
+    $('#tkOp').innerHTML = op ? esc(op.nom) : '<span class="z">—</span>';
     $('#tkAmt').textContent = Number(d.montant) > 0 ? nombre(d.montant) : '0';
-    $('#tkDate').textContent = d.date_operation ? fDateOp(d.date_operation) : '—';
+    $('#tkDate').innerHTML = d.date_operation ? fDateOp(d.date_operation) : '<span class="z">—</span>';
     const ref = d.categorie === 'FORMALITE' ? d.num_liquidation : d.reference;
-    $('#tkRef').textContent = ref || (d.categorie === 'FORMALITE' ? 'N° de liquidation à préciser' : 'Référence à préciser');
-    $('#tkRef').classList.toggle('z', !ref);
+    // La référence n'apparaît sur le ticket qu'une fois saisie.
+    $('#tkRefRow').hidden = !ref;
+    $('#tkRefL').textContent = d.categorie === 'FORMALITE' ? 'N° de liquidation' : 'Référence';
+    $('#tkRef').textContent = ref;
     icones();
   }
 
