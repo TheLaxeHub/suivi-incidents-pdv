@@ -60,7 +60,6 @@ window.APP_CONFIG = {
     { code: 'INFO_PDV', libelle: "Demande d'information au PDV", statut: 'EN_COURS' },
     { code: 'COMMENTAIRE', libelle: 'Commentaire', statut: null },
     { code: 'TERMINE', libelle: 'Terminée (résolue)', statut: 'TERMINE' },
-    { code: 'REJETE', libelle: 'Rejetée (non fondée)', statut: 'REJETE' },
   ],
 
   SEUIL_ALERTE_HEURES: 48,        // « Nouveau » depuis plus longtemps = alerte

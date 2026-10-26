@@ -114,7 +114,10 @@
       const t = function (h) { return Math.min(now - 60e3, cree.getTime() + h * 36e5); };
       ajouterAction(inc, 'PRISE_EN_CHARGE', BO, agent, t(1 + hasard() * 8));
       if (r < .3) continue;
-      ajouterAction(inc, pick(['CREATION_CA', 'RELANCE', 'DEMANDE_REGULARISATION']), BO, agent, t(10 + hasard() * 10), 'Dossier transmis à l\'opérateur.', 'CA-' + Math.floor(hasard() * 1e5));
+      const suite = pick(['CREATION_CA', 'RELANCE', 'DEMANDE_REGULARISATION']);
+      const ref = suite === 'DEMANDE_REGULARISATION' ? 'Régularisation ' + inc.id + ' – ' + pdv : suite === 'CREATION_CA' ? 'CA-' + Math.floor(hasard() * 1e5) : '';
+      const act = ajouterAction(inc, suite, BO, agent, t(10 + hasard() * 10), 'Dossier transmis à l\'opérateur.', ref);
+      if (suite === 'DEMANDE_REGULARISATION') act.date_envoi = act.cree_le.slice(0, 10);
       if (r < .42) { ajouterAction(inc, 'INFO_PDV', BO, agent, t(22), 'Merci de nous transmettre la capture du reçu client.'); continue; }
       if (r < .5) {
         ajouterAction(inc, 'INFO_PDV', BO, agent, t(22), 'Pouvez-vous confirmer le numéro du client ?');
@@ -123,7 +126,7 @@
       }
       if (ageH < 30) continue;
       if (r < .9) ajouterAction(inc, 'TERMINE', BO, agent, t(24 + hasard() * 48), 'Régularisation effectuée par l\'opérateur.');
-      else ajouterAction(inc, 'REJETE', BO, agent, t(24 + hasard() * 24), 'La transaction a bien abouti côté opérateur.');
+      else ajouterAction(inc, 'TERMINE', BO, agent, t(24 + hasard() * 24), 'La transaction avait bien abouti côté opérateur.');
     }
 
     // Codes de connexion du Back Office : affichés à l'écran au lieu d'être envoyés par e-mail.
@@ -187,6 +190,7 @@
         const inc = incidents.find(function (i) { return i.id === data.incident_id; });
         if (!inc) return Promise.reject(erreur('INTROUVABLE', 'Incident introuvable.'));
         const a = ajouterAction(inc, data.code, s.profil, data.agent, Date.now(), data.commentaire, data.reference);
+        a.date_envoi = data.date_envoi || '';
         return pause({ ok: true, incident: copie(inc), action: copie(a) });
       },
     };

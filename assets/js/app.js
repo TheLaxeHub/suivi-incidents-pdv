@@ -32,6 +32,12 @@
     TERMINE: 'circle-check', REJETE: 'circle-x', COMPLEMENT: 'reply',
   };
   const AVEC_REFERENCE = ['CREATION_CA', 'DEMANDE_REGULARISATION', 'RELANCE'];
+  // Libellé et exemple du champ « référence » selon l'action.
+  const CHAMPS_REFERENCE = {
+    CREATION_CA: ['N° du CA *', 'Ex. : CA-24589'],
+    DEMANDE_REGULARISATION: ['Objet du mail envoyé à Alima *', 'Ex. : Régularisation INC-2026-00012 – ABOBO'],
+    RELANCE: ['Référence (facultatif)', 'N° de ticket chez l\'opérateur…'],
+  };
   const COURTS_ACTION = {
     PRISE_EN_CHARGE: 'Prise en charge', CREATION_CA: 'Création CA', DEMANDE_REGULARISATION: 'Régularisation', RELANCE: 'Relance opérateur',
     INFO_PDV: 'Info au PDV', COMMENTAIRE: 'Commentaire', TERMINE: 'Résolue', REJETE: 'Rejetée',
@@ -1465,8 +1471,9 @@
     actionsDe(i.id).forEach(function (a) {
       const cls = a.code === 'TERMINE' ? 'done' : a.code === 'REJETE' ? 'blocked' : a.code === 'INFO_PDV' ? 'ask' : a.code === 'COMPLEMENT' ? 'pdv' : a.code === 'COMMENTAIRE' ? '' : 'ongoing';
       tl.push('<div class="tli' + (a.auteur === moi() ? ' me' : '') + '"><div class="tld ' + cls + '">' + ico(ICO_ACTION[a.code] || 'dot') + '</div><div class="tlb">' +
-        '<div class="tdh">' + esc(a.libelle) + (a.reference ? '<span class="tdr">' + esc(a.reference) + '</span>' : '') +
+        '<div class="tdh">' + esc(a.libelle) + (a.reference && a.code !== 'DEMANDE_REGULARISATION' ? '<span class="tdr">' + esc(a.reference) + '</span>' : '') +
         '<span class="tdt">' + esc(a.auteur === BO ? (a.agent || 'Back Office') : a.auteur) + ' · ' + fDateHeure(a.cree_le) + '</span></div>' +
+        (a.code === 'DEMANDE_REGULARISATION' && a.reference ? '<div class="tdm">' + ico('mail') + '<span>Mail à Alima' + (a.date_envoi ? ' du <b>' + fDateOp(a.date_envoi) + '</b>' : '') + ' : « ' + esc(a.reference) + ' »</span></div>' : '') +
         (a.commentaire ? '<div class="tdd">' + esc(a.commentaire) + '</div>' : '') + '</div></div>');
     });
 
@@ -1484,6 +1491,7 @@
       formulaireAction(i) + '</div></div>';
     icones();
     lierFormulaire(brouillon);
+    $$('#pBody [data-pec]').forEach(function (b) { b.addEventListener('click', function () { actionRapide(i.id, 'PRISE_EN_CHARGE', null, b); }); });
     if (nouveau) $('#pBody').scrollTop = 0;
     // Le fil de suivi s'ouvre sur la dernière action.
     const fil = $('#pTl');
@@ -1499,10 +1507,8 @@
     };
     if (estBO()) {
       if (e === 'NOUVEAU') {
-        return boite('hl-new', 'hand', 'À prendre en charge', 'Déclaré ' + ilya(i.cree_le) + '. Prenez-le en charge pour informer le point de vente que le traitement a commencé.',
-          '<button type="button" class="btn bp btn-sm" data-pick="PRISE_EN_CHARGE" data-go="1">' + ico('hand') + 'Prendre en charge</button>' +
-          '<button type="button" class="btn bo btn-sm" data-pick="INFO_PDV">' + ico('message-circle-question') + 'Demander une information</button>' +
-          '<button type="button" class="btn b-ko btn-sm" data-pick="REJETE">' + ico('circle-x') + 'Rejeter</button>');
+        return boite('hl-new', 'hand', 'À prendre en charge', 'Déclaré ' + ilya(i.cree_le) + '. Prenez-le en charge pour informer le point de vente que le traitement a commencé : les autres actions (demande d\'information, CA, relance…) seront alors disponibles.',
+          '<button type="button" class="btn bp" data-pec>' + ico('hand') + 'Prendre en charge</button>');
       }
       if (e === 'ATTENTE') {
         return boite('hl', 'hourglass', 'En attente du point de vente', 'Information demandée ' + ilya(m.question.cree_le) + (m.question.commentaire ? ' : « ' + esc(m.question.commentaire) + ' »' : '') + '. Vous pouvez relancer ou continuer le traitement.',
@@ -1529,13 +1535,18 @@
 
   function formulaireAction(i) {
     if (estBO()) {
+      // Tant que l'incident n'est pas pris en charge, seule la prise en charge est possible (encadré ci-dessus).
+      if (i.statut === 'NOUVEAU') {
+        return '<div class="ps" id="cmpWrap"><div class="pec-lock">' + ico('lock') + '<span>Prenez l\'incident en charge pour débloquer les actions de suivi.</span></div></div>';
+      }
       const agent = (S.session.user && S.session.user.nom) || memoire.lire(cle('agent')) || '';
       return '<div class="ps" id="cmpWrap"><div class="pst">' + ico('square-pen') + 'Ajouter une action</div><form class="cmp" id="fAct" novalidate>' +
-        '<div class="acts">' + C.ACTIONS_BO.map(function (a) {
+        '<div class="acts">' + C.ACTIONS_BO.filter(function (a) { return a.code !== 'PRISE_EN_CHARGE'; }).map(function (a) {
           const t = a.statut === 'TERMINE' ? ' class="t-ok"' : a.statut === 'REJETE' ? ' class="t-ko"' : '';
           return '<label' + t + ' title="' + esc(a.libelle) + '"><input type="radio" name="code" value="' + esc(a.code) + '"><span>' + ico(ICO_ACTION[a.code] || 'dot') + esc(COURTS_ACTION[a.code] || a.libelle) + '</span></label>';
         }).join('') + '</div>' +
-        '<div id="aRefWrap" hidden><label class="fl" for="aRef">Référence (N° CA, N° de demande…)</label><input class="in mono" id="aRef" name="reference" autocomplete="off"></div>' +
+        '<div id="aRefWrap" hidden><div class="fr fr-act"><div class="fcol" id="aRefCol"><label class="fl" for="aRef" id="aRefL">Référence</label><input class="in" id="aRef" name="reference" autocomplete="off"></div>' +
+        '<div class="fcol" id="aEnvWrap" hidden><label class="fl" for="aEnv">Date d\'envoi du mail *</label><input class="in" id="aEnv" name="date_envoi" type="date" max="' + cleJour(new Date()) + '"></div></div></div>' +
         '<label class="fl" for="aCom" id="aComL">Commentaire</label><textarea class="in" id="aCom" name="commentaire" rows="2" placeholder="Détail de l\'action, réponse de l\'opérateur, consigne au PDV…"></textarea>' +
         '<div id="aAgentWrap"' + (agent ? ' hidden' : '') + '><label class="fl" for="aAgent">Votre nom (agent Back Office) *</label><input class="in" id="aAgent" name="agent" value="' + esc(agent) + '" autocomplete="name"></div>' +
         '<div class="msg err" id="aErr" hidden></div>' +
@@ -1571,6 +1582,11 @@
       const maj = function () {
         const code = (f.querySelector('[name=code]:checked') || {}).value;
         $('#aRefWrap').hidden = AVEC_REFERENCE.indexOf(code) < 0;
+        const champ = CHAMPS_REFERENCE[code] || CHAMPS_REFERENCE.RELANCE;
+        $('#aRefL').textContent = champ[0];
+        $('#aRef').placeholder = champ[1];
+        $('#aRef').classList.toggle('mono', code === 'CREATION_CA');
+        $('#aEnvWrap').hidden = code !== 'DEMANDE_REGULARISATION';
         const aide = AIDES_COMMENTAIRE[code] || ['Commentaire', 'Détail de l\'action, réponse de l\'opérateur, consigne au PDV…'];
         $('#aComL').textContent = aide[0];
         $('#aCom').placeholder = aide[1];
@@ -1627,6 +1643,7 @@
       incident_id: S.ouvert,
       code: code,
       reference: f.reference && !$('#aRefWrap').hidden ? f.reference.value.trim() : '',
+      date_envoi: f.date_envoi && code === 'DEMANDE_REGULARISATION' ? f.date_envoi.value : '',
       commentaire: f.commentaire.value.trim(),
       // Le point de vente agit en son nom ; seul le Back Office indique l'agent.
       agent: f.agent ? f.agent.value.trim() : moi(),
@@ -1634,6 +1651,12 @@
     erreurAction('');
     if (!code) { erreurAction('Choisissez une action.'); return; }
     if (!data.agent) { $('#aAgentWrap').hidden = false; erreurAction('Indiquez votre nom (agent Back Office).', f.agent); return; }
+    if (code === 'CREATION_CA' && !data.reference) { erreurAction('Indiquez le N° du CA.', f.reference); return; }
+    if (code === 'DEMANDE_REGULARISATION') {
+      if (!data.reference) { erreurAction("Indiquez l'objet du mail envoyé à Alima.", f.reference); return; }
+      if (!data.date_envoi) { erreurAction("Indiquez la date d'envoi du mail.", f.date_envoi); return; }
+      if (data.date_envoi > cleJour(new Date())) { erreurAction("La date d'envoi ne peut pas être dans le futur.", f.date_envoi); return; }
+    }
     if ((!estBO() || COMMENTAIRE_REQUIS.indexOf(code) >= 0) && !data.commentaire) {
       erreurAction(estBO() ? 'Ce commentaire est obligatoire pour cette action.' : 'Écrivez votre message au Back Office.', f.commentaire);
       return;
@@ -1663,15 +1686,14 @@
   }
 
   // Bouton « Prendre en charge » directement depuis la file.
-  function actionRapide(id, code, contexte) {
-    const agent = memoire.lire(cle('agent'));
+  function actionRapide(id, code, contexte, bouton) {
+    const agent = (S.session.user && S.session.user.nom) || memoire.lire(cle('agent'));
     if (!agent) {
-      ouvrirPanneau(id, contexte);
-      choisirAction(code);
-      toast('Indiquez votre nom une première fois, il sera retenu.', '');
+      toast('Session Back Office incomplète : reconnectez-vous avec votre code.', 'err');
       return;
     }
-    enregistrerAction({ incident_id: id, code: code, reference: '', commentaire: '', agent: agent }, null);
+    // La prise en charge se fait sans commentaire.
+    enregistrerAction({ incident_id: id, code: code, reference: '', commentaire: '', agent: agent }, bouton || null);
   }
 
   /* ================= Recherche rapide ================= */
@@ -2082,10 +2104,10 @@
       .map(function (a) {
         return {
           'N° incident': a.incident_id, 'Date': fDateHeure(a.cree_le), 'Auteur': a.auteur, 'Agent': a.agent,
-          'Action': a.libelle, 'Référence': a.reference, 'Commentaire': a.commentaire,
+          'Action': a.libelle, 'Référence / objet du mail': a.reference, "Date d'envoi du mail": a.date_envoi ? fDateOp(a.date_envoi) : '', 'Commentaire': a.commentaire,
           'Statut après': (ETATS[a.statut_apres] || {}).libelle || '',
         };
-      }), [16, 17, 16, 18, 28, 16, 60, 12]), 'Actions de suivi');
+      }), [16, 17, 16, 18, 28, 36, 16, 60, 12]), 'Actions de suivi');
 
     if (estBO()) {
       XLSX.utils.book_append_sheet(wb, feuille(C.POINTS_DE_VENTE.map(function (p) {

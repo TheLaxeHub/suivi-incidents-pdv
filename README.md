@@ -40,7 +40,7 @@ Pour ajouter ou retirer un agent : modifiez `BO_UTILISATEURS` **à la fois** dan
 
 ### Back Office
 - **File de traitement** : À prendre en charge (du plus ancien au plus récent, retards > 48 h signalés) · En traitement (réponses des PDV en tête) · En attente du PDV · Clôturés sur 7 jours. Bouton **« Prendre en charge »** directement depuis la liste.
-- **Détail d'un incident** (fenêtre en deux colonnes sans défilement : dossier à gauche, historique et saisie d'action à droite) : étape suivante proposée selon l'état, actions de suivi avec référence et commentaire (Prise en charge · Création de CA · Demande de régularisation · Relance opérateur · Demande d'information au PDV · Commentaire · Terminée · Rejetée), navigation vers l'incident suivant (touches J / K).
+- **Détail d'un incident** (fenêtre en deux colonnes sans défilement : dossier à gauche, historique et saisie d'action à droite) : étape suivante proposée selon l'état, **prise en charge obligatoire en premier** (un clic, sans commentaire), puis actions de suivi avec commentaire (Création de CA **avec N° du CA obligatoire**, Demande de régularisation **avec objet et date d'envoi du mail à Alima obligatoires** · Relance opérateur · Demande d'information au PDV · Commentaire · Terminée). Un incident n'est jamais rejeté : il se termine toujours par « Résolu », navigation vers l'incident suivant (touches J / K).
 - **Pilotage** : indicateurs comparés à la période précédente, répartition par état, évolution, montants par nature, par opérateur, points de vente les plus concernés.
 - **Registre** complet, triable et filtrable, et **Synthèse par PDV** avec indicateur de santé.
 
@@ -56,7 +56,6 @@ Pour ajouter ou retirer un agent : modifiez `BO_UTILISATEURS` **à la fois** dan
 | **Nouveau** | Déclaré par le PDV, pas encore pris en charge |
 | **En cours** | Une action du Back Office est en cours (prise en charge, CA, régularisation, relance…) |
 | **Terminé** | Résolu et clôturé par le Back Office |
-| **Rejeté** | Jugé non fondé par le Back Office |
 
 ---
 

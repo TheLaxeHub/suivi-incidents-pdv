@@ -51,10 +51,9 @@ const ACTIONS = {
   INFO_PDV: { libelle: "Demande d'information au PDV", statut: 'EN_COURS', bo: true },
   COMMENTAIRE: { libelle: 'Commentaire', statut: null, bo: true },
   TERMINE: { libelle: 'Terminée (résolue)', statut: 'TERMINE', bo: true },
-  REJETE: { libelle: 'Rejetée (non fondée)', statut: 'REJETE', bo: true },
   COMPLEMENT: { libelle: "Complément d'information du PDV", statut: null, bo: false },
 };
-const COMMENTAIRE_OBLIGATOIRE = ['COMMENTAIRE', 'COMPLEMENT', 'INFO_PDV', 'REJETE'];
+const COMMENTAIRE_OBLIGATOIRE = ['COMMENTAIRE', 'COMPLEMENT', 'INFO_PDV'];
 
 const COLS_INCIDENTS = [
   'id', 'cree_le', 'pdv', 'declarant', 'categorie', 'type_operation', 'operateur',
@@ -63,7 +62,7 @@ const COLS_INCIDENTS = [
 ];
 const COLS_ACTIONS = [
   'id', 'incident_id', 'cree_le', 'auteur', 'agent', 'code', 'libelle', 'reference',
-  'commentaire', 'statut_apres',
+  'commentaire', 'statut_apres', 'date_envoi',
 ];
 
 /* ------------------------------------------------------------------ */
@@ -266,9 +265,19 @@ function ajouterAction_(sess, data) {
   const def = ACTIONS[code];
   if (!def) throw erreur_('ACTION_INCONNUE', 'Action de suivi inconnue.');
   if (def.bo !== sess.isBO) throw erreur_('INTERDIT', "Cette action n'est pas autorisée pour votre profil.");
-  const commentaire = texte_(data.commentaire, 2000);
+  // La prise en charge se fait sans commentaire.
+  const commentaire = code === 'PRISE_EN_CHARGE' ? '' : texte_(data.commentaire, 2000);
   if (COMMENTAIRE_OBLIGATOIRE.indexOf(code) >= 0 && !commentaire) {
     throw erreur_('VALIDATION', 'Un commentaire est obligatoire pour cette action.');
+  }
+  // N° du CA obligatoire ; pour une régularisation, objet et date d'envoi du mail à Alima.
+  const reference = texte_(data.reference, 200);
+  let dateEnvoi = '';
+  if (code === 'CREATION_CA' && !reference) throw erreur_('VALIDATION', 'Indiquez le N° du CA.');
+  if (code === 'DEMANDE_REGULARISATION') {
+    dateEnvoi = texte_(data.date_envoi, 10);
+    if (!reference) throw erreur_('VALIDATION', "Indiquez l'objet du mail envoyé à Alima.");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateEnvoi)) throw erreur_('VALIDATION', "Indiquez la date d'envoi du mail.");
   }
   // Un point de vente agit en son nom ; l'agent Back Office est celui de la session.
   const agent = sess.agent || texte_(data.agent, 80) || (sess.isBO ? '' : sess.profil);
@@ -280,6 +289,9 @@ function ajouterAction_(sess, data) {
     if (!ligne) throw erreur_('INTROUVABLE', 'Incident introuvable.');
     const inc = depuisLigne_(db.incidents.getRange(ligne, 1, 1, COLS_INCIDENTS.length).getValues()[0], COLS_INCIDENTS);
     if (!sess.isBO && inc.pdv !== sess.profil) throw erreur_('INTERDIT', 'Incident d\'un autre point de vente.');
+    // Le Back Office prend d'abord l'incident en charge (sans commentaire), puis seulement les autres actions.
+    if (sess.isBO && inc.statut === 'NOUVEAU' && code !== 'PRISE_EN_CHARGE') throw erreur_('PRISE_EN_CHARGE_REQUISE', "Prenez d'abord l'incident en charge.");
+    if (code === 'PRISE_EN_CHARGE' && inc.statut !== 'NOUVEAU') throw erreur_('DEJA_PRIS', 'Cet incident est déjà pris en charge.');
 
     const now = new Date().toISOString();
     const action = {
@@ -290,9 +302,10 @@ function ajouterAction_(sess, data) {
       agent: agent,
       code: code,
       libelle: def.libelle,
-      reference: texte_(data.reference, 80),
+      reference: reference,
       commentaire: commentaire,
       statut_apres: def.statut || inc.statut,
+      date_envoi: dateEnvoi,
     };
     db.actions.appendRow(versLigne_(action, COLS_ACTIONS));
 
@@ -373,6 +386,11 @@ function onglet_(ss, nom, cols) {
     sh.getRange(1, 1, sh.getMaxRows(), cols.length).setNumberFormat('@');
     const iMontant = cols.indexOf('montant');
     if (iMontant >= 0) sh.getRange(2, iMontant + 1, sh.getMaxRows() - 1, 1).setNumberFormat('#,##0');
+  } else if (sh.getLastColumn() < cols.length) {
+    const debut = sh.getLastColumn() + 1;
+    const manquantes = cols.slice(debut - 1);
+    sh.getRange(1, debut, 1, manquantes.length).setValues([manquantes]).setFontWeight('bold').setBackground('#0D47A1').setFontColor('#FFFFFF');
+    sh.getRange(1, debut, sh.getMaxRows(), manquantes.length).setNumberFormat('@');
   }
   return sh;
 }

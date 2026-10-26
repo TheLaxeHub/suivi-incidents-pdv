@@ -877,3 +877,8 @@ button.kc.on{border-color:var(--kc);box-shadow:0 0 0 3px color-mix(in srgb,var(-
 .mdl.n-f .chs span{min-height:30px;padding:4px 12px;font-size:12.5px}
 @media (max-width:640px){.mdl.n-f .ops{grid-template-columns:repeat(3,1fr)}}
 .mdl.n-f .mdl-bd{padding-top:12px;padding-bottom:10px}
+.pec-lock{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--r);border:1px dashed var(--line-2);background:var(--surface);color:var(--muted);font-size:13px}
+.pec-lock svg.lucide{color:var(--faint);flex-shrink:0}
+.fr-act{gap:0 12px}
+.tdm{display:flex;align-items:flex-start;gap:7px;margin-top:4px;padding:6px 10px;border-radius:8px;background:var(--brand-soft);color:var(--brand-ink);font-size:12.5px}
+.tdm svg.lucide{width:14px;height:14px;margin-top:2px;flex-shrink:0}
