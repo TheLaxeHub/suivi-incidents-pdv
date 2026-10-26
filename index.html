@@ -9,7 +9,7 @@
 <link rel="icon" type="image/png" href="assets/img/logo-qfs.png">
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=public-sans:400,500,600,700|jetbrains-mono:500" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=20261027p">
+<link rel="stylesheet" href="assets/css/style.css?v=20261027t">
 <script>
   // Thème appliqué avant l'affichage pour éviter un flash.
   try { const t = localStorage.getItem('sip_theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) { /* stockage indisponible */ }
@@ -163,6 +163,7 @@
         <li data-step="4"><span class="stp-n">4</span><span class="stp-l">Envoi<small>Vérification finale</small></span></li>
       </ol>
       <div class="tk" id="nLive">
+        <p class="tk-t">Récapitulatif</p>
         <div class="tk-top"><span class="tk-i" id="tkIco"><i data-lucide="receipt"></i></span><span class="tk-nat" id="tkNat">Nouvel incident</span></div>
         <div class="tk-amt"><span id="tkAmt">0</span><small>FCFA</small></div>
         <dl class="tk-dl">
@@ -195,51 +196,59 @@
         </section>
 
         <section class="nstep" data-step="2" hidden>
-          <div class="fs only-f">
-            <div class="fs-h"><span class="fs-i"><i data-lucide="file-warning"></i></span><b>Incident de formalité</b><small>ce qui s'est produit</small></div>
-            <div class="chs" id="nIncident" data-name="incident"></div>
-            <div class="fr fr-t">
-              <div class="fcol"><label class="fl" for="nLiq">N° de liquidation *</label><div class="ix"><i data-lucide="hash"></i><input class="in mono" id="nLiq" name="num_liquidation" autocomplete="off" placeholder="LQ0000000"></div></div>
-              <div class="fcol"><label class="fl" for="nFormalite">Formalité voulue *</label><div class="ix"><i data-lucide="file-text"></i><input class="in" id="nFormalite" name="formalite" list="dlFormalites" autocomplete="off" placeholder="Ex. : carte grise"></div><datalist id="dlFormalites"></datalist></div>
+          <div class="fx only-f">
+            <div class="fx-l"><b>Incident *</b><small>Ce qui s'est produit lors du paiement</small></div>
+            <div class="fx-r">
+              <div class="chs" id="nIncident" data-name="incident"></div>
+              <div class="fr fr-t">
+                <div class="fcol"><label class="fl" for="nLiq">N° de liquidation *</label><input class="in mono" id="nLiq" name="num_liquidation" autocomplete="off"></div>
+                <div class="fcol"><label class="fl" for="nFormalite">Formalité voulue *</label><input class="in" id="nFormalite" name="formalite" list="dlFormalites" autocomplete="off"><datalist id="dlFormalites"></datalist></div>
+              </div>
             </div>
           </div>
 
-          <div class="fs">
-            <div class="fs-h"><span class="fs-i"><i data-lucide="smartphone"></i></span><b>Moyen de paiement *</b><small class="only-mm">le service utilisé par le client</small><small class="only-f">le service qui a été débité</small></div>
-            <div class="ops" id="nOps"></div>
+          <div class="fx">
+            <div class="fx-l"><b>Moyen de paiement *</b><small class="only-mm">Le service utilisé par le client</small><small class="only-f">Le service qui a été débité</small></div>
+            <div class="fx-r"><div class="ops" id="nOps"></div></div>
           </div>
 
-          <div class="fs">
-            <div class="fs-h"><span class="fs-i"><i data-lucide="banknote"></i></span><b>Montant et date</b><small>tels qu'indiqués sur le reçu</small></div>
-            <div class="fr">
-              <div class="fcol">
-                <label class="fl" for="nMontant">Montant *</label>
-                <div class="amt-in"><input class="in" id="nMontant" name="montant" inputmode="numeric" autocomplete="off" placeholder="0"><span>FCFA</span></div>
-              </div>
-              <div class="fcol">
-                <label class="fl" for="nDate">Date de l'opération *</label>
-                <div class="ix"><i data-lucide="calendar"></i><input class="in" id="nDate" name="date_operation" type="date"></div>
-                <div class="qd" id="nQuickDate">
-                  <button type="button" data-j="0">Aujourd'hui</button><button type="button" data-j="1">Hier</button><button type="button" data-j="2">Avant-hier</button>
+          <div class="fx">
+            <div class="fx-l"><b>Montant et date *</b><small>Tels qu'indiqués sur le reçu</small></div>
+            <div class="fx-r">
+              <div class="fr">
+                <div class="fcol">
+                  <label class="fl" for="nMontant">Montant</label>
+                  <div class="amt-in"><input class="in" id="nMontant" name="montant" inputmode="numeric" autocomplete="off" placeholder="0"><span>FCFA</span></div>
+                </div>
+                <div class="fcol">
+                  <label class="fl" for="nDate">Date de l'opération</label>
+                  <input class="in" id="nDate" name="date_operation" type="date">
+                  <div class="qd" id="nQuickDate">
+                    <button type="button" data-j="0">Aujourd'hui</button><button type="button" data-j="1">Hier</button><button type="button" data-j="2">Avant-hier</button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="fs only-mm">
-            <div class="fs-h"><span class="fs-i"><i data-lucide="receipt-text"></i></span><b>Client et transaction</b><small>la référence accélère le traitement</small></div>
-            <div class="fr">
-              <div class="fcol"><label class="fl" for="nTel">N° de téléphone / compte du client</label><div class="ix"><i data-lucide="phone"></i><input class="in mono" id="nTel" name="telephone" inputmode="tel" autocomplete="off" placeholder="07 00 00 00 00"></div></div>
-              <div class="fcol"><label class="fl" for="nRef">Référence de la transaction <span class="rec">conseillé</span></label><div class="ix"><i data-lucide="hash"></i><input class="in mono" id="nRef" name="reference" autocomplete="off"></div></div>
+          <div class="fx only-mm">
+            <div class="fx-l"><b>Client et transaction</b><small>La référence accélère le traitement</small></div>
+            <div class="fx-r">
+              <div class="fr">
+                <div class="fcol"><label class="fl" for="nTel">N° de téléphone / compte du client</label><input class="in mono" id="nTel" name="telephone" inputmode="tel" autocomplete="off"></div>
+                <div class="fcol"><label class="fl" for="nRef">Référence de la transaction <span class="rec">conseillé</span></label><input class="in mono" id="nRef" name="reference" autocomplete="off"></div>
+              </div>
             </div>
           </div>
         </section>
 
         <section class="nstep" data-step="3" hidden>
-          <div class="fs">
-            <div class="fs-h"><span class="fs-i"><i data-lucide="message-square-text"></i></span><b>Expliquez ce qui s'est passé *</b><small>en quelques mots</small></div>
-            <div class="tpl" id="nTpl"></div>
-            <div class="ta"><textarea class="in" id="nDesc" name="description" rows="7" maxlength="2000" placeholder="Ex. : le client a été débité mais n'a pas reçu l'argent sur son compte…"></textarea><span class="ta-n" id="nDescN">0 / 2000</span></div>
+          <div class="fx">
+            <div class="fx-l"><b>Explication *</b><small>Ce qui s'est passé, en quelques mots. Les phrases proposées peuvent vous aider.</small></div>
+            <div class="fx-r">
+              <div class="tpl" id="nTpl"></div>
+              <div class="ta"><textarea class="in" id="nDesc" name="description" rows="7" maxlength="2000"></textarea><span class="ta-n" id="nDescN">0 / 2000</span></div>
+            </div>
           </div>
           <div class="wz-tip"><i data-lucide="info"></i><span>Le Back Office choisit la solution adaptée (remboursement, régularisation…) et vous tient informé à chaque étape.</span></div>
         </section>
@@ -282,8 +291,8 @@
 <div class="ld" id="loader" hidden><div class="ld-s"></div></div>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
-<script src="assets/js/config.js?v=20261027p"></script>
-<script src="assets/js/store.js?v=20261027p"></script>
-<script src="assets/js/app.js?v=20261027p"></script>
+<script src="assets/js/config.js?v=20261027t"></script>
+<script src="assets/js/store.js?v=20261027t"></script>
+<script src="assets/js/app.js?v=20261027t"></script>
 </body>
 </html>

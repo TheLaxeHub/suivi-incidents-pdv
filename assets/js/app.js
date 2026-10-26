@@ -1747,7 +1747,7 @@
 
   function initDeclaration() {
     $('#nOps').innerHTML = C.OPERATEURS.map(function (o) {
-      return '<label style="--opc:' + esc(o.couleur) + '"><input type="radio" name="operateur" value="' + esc(o.code) + '"><span><b>' + esc(o.nom) + '</b></span></label>';
+      return '<label><input type="radio" name="operateur" value="' + esc(o.code) + '"><span><b>' + esc(o.nom) + '</b></span></label>';
     }).join('');
     $('#nIncident').innerHTML = C.INCIDENTS_FORMALITE.map(function (x) { return '<label><input type="radio" name="incident" value="' + esc(x) + '"><span>' + esc(x) + '</span></label>'; }).join('');
 
