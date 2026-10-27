@@ -359,6 +359,8 @@ function valider_(d) {
     inc.formalite = texte_(d.formalite, 120);
     if (!inc.incident) throw erreur_('VALIDATION', "Indiquez l'incident survenu.");
     if (!inc.num_liquidation) throw erreur_('VALIDATION', 'Indiquez le numéro de liquidation.');
+    inc.num_liquidation = inc.num_liquidation.toUpperCase().replace(/\s+/g, '');
+    if (!/^LIQ-\d{1,15}$/.test(inc.num_liquidation)) throw erreur_('VALIDATION', 'Le n° de liquidation doit être au format LIQ- suivi de 15 chiffres au maximum.');
     if (!inc.formalite) throw erreur_('VALIDATION', 'Indiquez la formalité voulue.');
     if (!inc.operateur) throw erreur_('VALIDATION', 'Choisissez le moyen de paiement.');
   }

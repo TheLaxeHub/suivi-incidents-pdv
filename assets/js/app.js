@@ -1806,6 +1806,7 @@
       if (t.classList) t.classList.remove('err');
       if (t.name === 'operateur') $('#nOps').classList.remove('err');
       if (t.name === 'incident') $('#nIncident').classList.remove('err');
+      if (t.id === 'nLiq') t.value = t.value.replace(/\D/g, '').slice(0, 15);
       if (t.id === 'nMontant') {
         const brut = t.value.replace(/\D/g, '').replace(/^0+/, '');
         t.value = brut ? nombre(brut) : '';
@@ -1847,6 +1848,8 @@
   }
 
   const SOLUTION_PAR_DEFAUT = 'À définir par le Back Office';
+  // Format imposé : LIQ- suivi de 1 à 15 chiffres (le champ ne reçoit que les chiffres).
+  const numLiquidation = function (v) { const c = String(v || '').replace(/^\s*LIQ-?/i, '').replace(/\D/g, '').slice(0, 15); return c ? 'LIQ-' + c : ''; };
   const cleLiquidation = function (v) { return sansAccents(v).replace(/[^a-z0-9]/g, ''); };
   function natureChoisie() { return ($('#fNew [name=nature]:checked') || {}).value || ''; }
   const valeurRadio = function (nom) { return ($('#fNew [name=' + nom + ']:checked') || {}).value || ''; };
@@ -1864,7 +1867,7 @@
       telephone: formalite ? '' : f.telephone.value.trim(),
       reference: formalite ? '' : f.reference.value.trim(),
       incident: formalite ? valeurRadio('incident') : '',
-      num_liquidation: formalite ? f.num_liquidation.value.trim() : '',
+      num_liquidation: formalite ? numLiquidation(f.num_liquidation.value) : '',
       formalite: formalite ? f.formalite.value.trim() : '',
       description: f.description.value.trim(),
       // Plus demandée au point de vente : c'est le Back Office qui choisit la solution.
@@ -2062,6 +2065,7 @@
     radio('operateur', b.operateur);
     radio('incident', b.incident);
     ['montant', 'telephone', 'reference', 'num_liquidation', 'formalite', 'description', 'date_operation'].forEach(function (k) { if (b[k] && f[k]) f[k].value = b[k]; });
+    if (b.num_liquidation) f.num_liquidation.value = numLiquidation(b.num_liquidation).slice(4);
   }
 
   function ouvrirDeclaration(natureInitiale) {

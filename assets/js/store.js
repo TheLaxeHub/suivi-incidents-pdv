@@ -100,7 +100,7 @@
         telephone: f ? '' : '07' + String(Math.floor(hasard() * 1e8)).padStart(8, '0'),
         reference: f ? '' : 'TX' + Math.floor(hasard() * 1e10),
         incident: f ? pick(C.INCIDENTS_FORMALITE) : '',
-        num_liquidation: f ? 'LQ' + Math.floor(hasard() * 1e7) : '',
+        num_liquidation: f ? 'LIQ-' + Math.floor(1e6 + hasard() * 9e6) : '',
         formalite: f ? pick(['Carte grise', 'Mutation', 'Duplicata', 'Visite technique']) : '',
         description: pick(descs[nat]),
         solution: 'À définir par le Back Office',

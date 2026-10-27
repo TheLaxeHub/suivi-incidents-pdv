@@ -9,7 +9,7 @@
 <link rel="icon" type="image/png" href="assets/img/logo-qfs.png">
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=public-sans:400,500,600,700|jetbrains-mono:500" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=20261027zl">
+<link rel="stylesheet" href="assets/css/style.css?v=20261027zo">
 <script>
   // Thème appliqué avant l'affichage pour éviter un flash.
   try { const t = localStorage.getItem('sip_theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) { /* stockage indisponible */ }
@@ -190,7 +190,7 @@
             <div class="fx-r">
               <div class="chs" id="nIncident" data-name="incident"></div>
               <div class="fr fr-t">
-                <div class="fcol"><label class="fl" for="nLiq">N° de liquidation *</label><input class="in mono" id="nLiq" name="num_liquidation" autocomplete="off"></div>
+                <div class="fcol"><label class="fl" for="nLiq">N° de liquidation *</label><div class="liq-in"><span>LIQ-</span><input class="in mono" id="nLiq" name="num_liquidation" inputmode="numeric" maxlength="15" autocomplete="off" title="15 chiffres au maximum" placeholder=" "><em>15 chiffres max</em></div></div>
                 <div class="fcol"><label class="fl" for="nFormalite">Formalité voulue *</label><input class="in" id="nFormalite" name="formalite" list="dlFormalites" autocomplete="off"><datalist id="dlFormalites"></datalist></div>
               </div>
             </div>
@@ -290,8 +290,8 @@
 <div class="ld" id="loader" hidden><div class="ld-s"></div></div>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
-<script src="assets/js/config.js?v=20261027zl"></script>
-<script src="assets/js/store.js?v=20261027zl"></script>
-<script src="assets/js/app.js?v=20261027zl"></script>
+<script src="assets/js/config.js?v=20261027zo"></script>
+<script src="assets/js/store.js?v=20261027zo"></script>
+<script src="assets/js/app.js?v=20261027zo"></script>
 </body>
 </html>
