@@ -109,6 +109,8 @@ function route_(req) {
       return { ok: true, profil: sess.profil, isBO: sess.isBO, user: sess.user || null };
     case 'list':
       return Object.assign({ ok: true }, lister_(sess));
+    case 'checkLiquidation':
+      return Object.assign({ ok: true }, chercherLiquidation_(req.num));
     case 'create':
       return { ok: true, incident: creer_(sess, req.data || {}) };
     case 'addAction':
@@ -458,6 +460,14 @@ function verrou_(fn) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/** Liquidation déjà déclarée, tous points de vente confondus : seuls le n° d'incident et le PDV sont renvoyés. */
+function chercherLiquidation_(num) {
+  const cle = cleLiquidation_(num);
+  if (!cle) return { existe: false };
+  const deja = lire_(base_().incidents, COLS_INCIDENTS).find(function (i) { return i.num_liquidation && cleLiquidation_(i.num_liquidation) === cle; });
+  return deja ? { existe: true, id: deja.id, pdv: deja.pdv } : { existe: false };
 }
 
 function cleLiquidation_(v) {

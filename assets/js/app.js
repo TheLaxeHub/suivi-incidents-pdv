@@ -1922,9 +1922,22 @@
     if (premier) { premier.scrollIntoView({ behavior: 'smooth', block: 'center' }); if (premier.focus) premier.focus({ preventScroll: true }); }
   }
 
-  function suivant() {
+  async function suivant() {
     const manquants = controlerEtape(etapeW);
     if (manquants.length) { signalerManquants(manquants); return; }
+    // Liquidation déjà déclarée par un autre point de vente : seul le serveur voit toutes les déclarations.
+    if (etapeW === 2 && natureChoisie() === 'FORMALITE' && Store.verifierLiquidation) {
+      const num = donneesDeclaration().num_liquidation;
+      chargement(true);
+      try {
+        const r = await Store.verifierLiquidation(S.session, num);
+        if (r.existe) { $('#nLiq').classList.add('err'); alerteLiquidation(num, { id: r.id, pdv: r.pdv }); return; }
+      } catch (e) {
+        // Vérification indisponible (ancien script, réseau) : le contrôle est refait à l'envoi.
+      } finally {
+        chargement(false);
+      }
+    }
     allerA(etapeW + 1);
   }
 

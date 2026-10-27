@@ -152,6 +152,12 @@
       configure: true,
       demo: true,
       login: function (s) { try { return pause(verifier(s)); } catch (e) { return Promise.reject(e); } },
+      verifierLiquidation: function (s, num) {
+        verifier(s);
+        const cle = function (v) { return String(v || '').toLowerCase().replace(/[^a-z0-9]/g, ''); };
+        const deja = num && incidents.find(function (i) { return i.num_liquidation && cle(i.num_liquidation) === cle(num); });
+        return pause(deja ? { ok: true, existe: true, id: deja.id, pdv: deja.pdv } : { ok: true, existe: false });
+      },
       otpEnvoyer: function (email) {
         const u = agentBo(email);
         const code = String(Math.floor(1e5 + Math.random() * 9e5));
@@ -203,6 +209,7 @@
     configure: !!C.API_URL,
     demo: false,
     login: function (s) { return appel({ action: 'login', profil: s.profil, code: s.code, token: s.token }); },
+    verifierLiquidation: function (s, num) { return appel({ action: 'checkLiquidation', profil: s.profil, code: s.code, token: s.token, num: num }); },
     otpEnvoyer: function (email) { return appel({ action: 'otpSend', email: email }); },
     otpVerifier: function (email, otp) { return appel({ action: 'otpVerify', email: email, otp: otp }); },
     logout: function (s) { return appel({ action: 'logout', token: s.token }).catch(function () { /* déjà expirée */ }); },
