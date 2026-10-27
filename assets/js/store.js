@@ -178,7 +178,7 @@
         verifier(s);
         const cle = function (v) { return String(v || '').toLowerCase().replace(/[^a-z0-9]/g, ''); };
         const deja = data.num_liquidation && incidents.find(function (i) { return i.num_liquidation && cle(i.num_liquidation) === cle(data.num_liquidation); });
-        if (deja) return Promise.reject(erreur('DOUBLON_LIQUIDATION', 'Le n° de liquidation ' + data.num_liquidation + ' a déjà été déclaré (' + deja.id + ').'));
+        if (deja) return Promise.reject(erreur('DOUBLON_LIQUIDATION', 'Le n° de liquidation ' + data.num_liquidation + ' a déjà été déclaré (' + deja.id + ', ' + deja.pdv + ').'));
         const d = new Date();
         const inc = Object.assign({}, data, {
           id: nouvelId(d), pdv: s.profil, statut: 'NOUVEAU', derniere_action: 'Déclaration',

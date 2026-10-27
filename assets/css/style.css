@@ -1029,3 +1029,20 @@ button.kc.on{border-color:var(--kc);box-shadow:0 0 0 3px color-mix(in srgb,var(-
 .p-r .p-hist{padding:10px 12px}
 .p-r{padding-top:12px;padding-bottom:12px}
 .p-hist .tli:last-child{padding-bottom:0}
+
+/* ---------- Fenêtre d'alerte ---------- */
+.pop{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(8,15,30,.45);backdrop-filter:blur(3px);animation:fadeIn .15s ease}
+.pop-box{width:min(440px,100%);background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh-3);padding:24px 24px 20px;text-align:center;animation:pop .22s cubic-bezier(.2,.8,.2,1)}
+.pop-i{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;margin-bottom:14px}
+.pop-i svg.lucide{width:24px;height:24px}
+.pop-i.warn{background:var(--warn-soft);color:var(--warn);box-shadow:0 0 0 8px color-mix(in srgb,var(--warn) 8%,transparent)}
+.pop-i.err{background:var(--danger-soft);color:var(--danger);box-shadow:0 0 0 8px color-mix(in srgb,var(--danger) 8%,transparent)}
+.pop-t{font-size:18px;font-weight:700;color:var(--ink)}
+.pop-d{margin-top:8px;font-size:14px;color:var(--text);line-height:1.55}
+.pop-d b{color:var(--ink)}
+.pop-ref{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;margin:12px 0;padding:10px 12px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--line);font-size:13px}
+.pop-ref .mono{font-weight:600;color:var(--ink)}
+.pop-ref small{color:var(--muted)}
+.pop-n{font-size:13px;color:var(--muted);margin-top:4px}
+.pop-a{display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.pop-a .btn{min-width:150px}

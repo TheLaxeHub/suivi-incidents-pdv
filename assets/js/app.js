@@ -182,6 +182,45 @@
     setTimeout(function () { t.classList.add('out'); setTimeout(function () { t.remove(); }, 220); }, type === 'err' ? 5500 : 3200);
   }
   function chargement(on) { $('#loader').hidden = !on; }
+
+  /* Fenêtre d'alerte : icône, titre, texte et boutons ({ libelle, ico, principal, action }). */
+  function popup(o) {
+    const p = $('#pop');
+    $('#popI').className = 'pop-i ' + (o.ton || 'warn');
+    $('#popI').innerHTML = ico(o.ico || 'triangle-alert');
+    $('#popT').textContent = o.titre;
+    $('#popD').innerHTML = o.texte;
+    $('#popA').innerHTML = '';
+    (o.boutons || [{ libelle: 'Compris', principal: true }]).forEach(function (b) {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'btn ' + (b.principal ? 'bp' : 'bo');
+      el.innerHTML = (b.ico ? ico(b.ico) : '') + esc(b.libelle);
+      el.addEventListener('click', function () { fermerPopup(); if (b.action) b.action(); });
+      $('#popA').appendChild(el);
+    });
+    p.hidden = false;
+    icones();
+    setTimeout(function () { const prim = $('#popA .bp'); if (prim) prim.focus(); }, 30);
+  }
+  function fermerPopup() { $('#pop').hidden = true; }
+
+  // Liquidation déjà déclarée : une liquidation correspond à un seul paiement.
+  function alerteLiquidation(num, existant, texteServeur) {
+    const local = existant && parId(existant.id);
+    popup({
+      ton: 'warn', ico: 'copy-x',
+      titre: 'N° de liquidation déjà déclaré',
+      texte: existant
+        ? '<p>Le n° <b class="mono">' + esc(num) + '</b> a déjà fait l\'objet d\'une déclaration :</p>' +
+          '<div class="pop-ref"><span class="mono">' + esc(existant.id) + '</span>' + (existant.pdv ? '<span>' + esc(existant.pdv) + '</span>' : '') +
+          (local ? badge(etat(local)) + '<small>' + fDate(local.cree_le) + '</small>' : '') + '</div>' +
+          '<p class="pop-n">Une liquidation correspond à un seul paiement : elle ne peut pas être déclarée deux fois. Vérifiez le n° saisi.</p>'
+        : '<p>' + esc(texteServeur) + '</p><p class="pop-n">Une liquidation correspond à un seul paiement : elle ne peut pas être déclarée deux fois. Vérifiez le n° saisi.</p>',
+      boutons: (local ? [{ libelle: 'Voir l\'incident', ico: 'eye', action: function () { fermerDeclaration(); ouvrirPanneau(local.id); } }] : [])
+        .concat([{ libelle: 'Corriger le n°', ico: 'pencil', principal: true, action: function () { const c = $('#nLiq'); c.classList.add('err'); c.focus(); c.select(); } }]),
+    });
+  }
   function copier(texte) {
     const ok = function () { toast('Copié : ' + texte, 'ok'); };
     if (navigator.clipboard) navigator.clipboard.writeText(texte).then(ok, function () { toast('Copie impossible.', 'err'); });
@@ -607,7 +646,8 @@
     if (!S.session) return;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); ouvrirRecherche(); return; }
     if (e.key === 'Escape') {
-      if (!$('#cmdk').hidden) fermerRecherche();
+      if (!$('#pop').hidden) fermerPopup();
+      else if (!$('#cmdk').hidden) fermerRecherche();
       else if (!$('#mNew').hidden) fermerDeclaration();
       else if (S.ouvert) fermerPanneau();
       return;
@@ -1743,6 +1783,7 @@
   let incidentCree = null;
 
   function initDeclaration() {
+    $('#pop').addEventListener('mousedown', function (e) { if (e.target.id === 'pop') fermerPopup(); });
     $('#nOps').innerHTML = C.OPERATEURS.map(function (o) {
       return '<label><input type="radio" name="operateur" value="' + esc(o.code) + '"><span><b>' + esc(o.nom) + '</b></span></label>';
     }).join('');
@@ -1847,7 +1888,8 @@
         const deja = d.num_liquidation && S.incidents.find(function (i) { return i.num_liquidation && cleLiquidation(i.num_liquidation) === cleLiquidation(d.num_liquidation); });
         if (deja) {
           f.num_liquidation.classList.add('err');
-          return ['un autre n° de liquidation (le n° ' + d.num_liquidation + ' a déjà été déclaré : ' + deja.id + ')'];
+          alerteLiquidation(d.num_liquidation, deja);
+          return [null];
         }
         exiger(d.formalite, f.formalite, 'la formalité voulue');
       } else {
@@ -1873,6 +1915,8 @@
   }
 
   function signalerManquants(manquants) {
+    // [null] : le problème est déjà expliqué dans une fenêtre d'alerte.
+    if (!manquants.filter(Boolean).length) return;
     erreurDeclaration('À compléter : ' + manquants.join(', ') + '.');
     const premier = $('#fNew .err');
     if (premier) { premier.scrollIntoView({ behavior: 'smooth', block: 'center' }); if (premier.focus) premier.focus({ preventScroll: true }); }
@@ -2072,7 +2116,14 @@
       allerA(5);
       rendre();
     } catch (ex) {
-      erreurDeclaration(ex.message);
+      if (ex.code === 'DOUBLON_LIQUIDATION') {
+        allerA(2);
+        $('#nLiq').classList.add('err');
+        const m = /\((INC-[^,)]+)(?:, ([^)]+))?\)/.exec(ex.message);
+        alerteLiquidation(donneesDeclaration().num_liquidation, m ? { id: m[1], pdv: m[2] || '' } : null, ex.message);
+      } else {
+        erreurDeclaration(ex.message);
+      }
       $('#nSubmit').disabled = false;
       $('#nSubmit').innerHTML = ico('send') + 'Envoyer au Back Office';
       icones();
