@@ -1543,7 +1543,7 @@
       }
       if (e === 'EN_COURS') {
         return boite('', 'loader', 'Traitement en cours', 'Dernière action : ' + esc(m.derniere ? m.derniere.libelle : '') + ' ' + ilya(i.maj_le) + '.',
-          '<button type="button" class="btn bo btn-sm" data-pick="CREATION_CA">' + ico('file-plus-2') + 'Créer un CA</button><button type="button" class="btn bo btn-sm" data-pick="RELANCE">' + ico('phone-outgoing') + 'Relancer</button><button type="button" class="btn b-ok btn-sm" data-pick="TERMINE">' + ico('circle-check') + 'Marquer résolu</button>');
+          '');
       }
       return boite('', i.statut === 'TERMINE' ? 'circle-check' : 'circle-x', i.statut === 'TERMINE' ? 'Incident résolu' : 'Incident rejeté',
         'Clôturé le ' + fDateHeure(i.cloture_le) + (i.cloture_le ? ', ' + duree((date(i.cloture_le) - date(i.cree_le)) / 36e5) + ' après la déclaration.' : '.'), '');
