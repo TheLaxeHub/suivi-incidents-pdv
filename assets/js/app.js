@@ -1526,6 +1526,10 @@
   }
 
   function formulaireAction(i) {
+    // Incident résolu (ou rejeté autrefois) : le dossier est clos, plus aucune action.
+    if (!estOuvert(i)) {
+      return '<div class="ps" id="cmpWrap"><div class="pec-lock">' + ico('lock') + '<span>Incident clôturé : plus aucune action ne peut être ajoutée.</span></div></div>';
+    }
     if (estBO()) {
       // Tant que l'incident n'est pas pris en charge, seule la prise en charge est possible (encadré ci-dessus).
       if (i.statut === 'NOUVEAU') {

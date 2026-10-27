@@ -290,6 +290,7 @@ function ajouterAction_(sess, data) {
     const inc = depuisLigne_(db.incidents.getRange(ligne, 1, 1, COLS_INCIDENTS.length).getValues()[0], COLS_INCIDENTS);
     if (!sess.isBO && inc.pdv !== sess.profil) throw erreur_('INTERDIT', 'Incident d\'un autre point de vente.');
     // Le Back Office prend d'abord l'incident en charge (sans commentaire), puis seulement les autres actions.
+    if (inc.statut === 'TERMINE' || inc.statut === 'REJETE') throw erreur_('CLOTURE', 'Incident clôturé : plus aucune action ne peut être ajoutée.');
     if (sess.isBO && inc.statut === 'NOUVEAU' && code !== 'PRISE_EN_CHARGE') throw erreur_('PRISE_EN_CHARGE_REQUISE', "Prenez d'abord l'incident en charge.");
     if (code === 'PRISE_EN_CHARGE' && inc.statut !== 'NOUVEAU') throw erreur_('DEJA_PRIS', 'Cet incident est déjà pris en charge.');
 
