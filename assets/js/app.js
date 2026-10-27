@@ -215,8 +215,8 @@
         ? '<p>Le n° <b class="mono">' + esc(num) + '</b> a déjà fait l\'objet d\'une déclaration :</p>' +
           '<div class="pop-ref"><span class="mono">' + esc(existant.id) + '</span>' + (existant.pdv ? '<span>' + esc(existant.pdv) + '</span>' : '') +
           (local ? badge(etat(local)) + '<small>' + fDate(local.cree_le) + '</small>' : '') + '</div>' +
-          '<p class="pop-n">Une liquidation correspond à un seul paiement : elle ne peut pas être déclarée deux fois. Vérifiez le n° saisi.</p>'
-        : '<p>' + esc(texteServeur) + '</p><p class="pop-n">Une liquidation correspond à un seul paiement : elle ne peut pas être déclarée deux fois. Vérifiez le n° saisi.</p>',
+          '<p class="pop-n">Une liquidation ne peut pas être déclarée deux fois. Vérifiez le n° saisi.</p>'
+        : '<p>' + esc(texteServeur) + '</p><p class="pop-n">Une liquidation ne peut pas être déclarée deux fois. Vérifiez le n° saisi.</p>',
       boutons: (local ? [{ libelle: 'Voir l\'incident', ico: 'eye', action: function () { fermerDeclaration(); ouvrirPanneau(local.id); } }] : [])
         .concat([{ libelle: 'Corriger le n°', ico: 'pencil', principal: true, action: function () { const c = $('#nLiq'); c.classList.add('err'); c.focus(); c.select(); } }]),
     });
