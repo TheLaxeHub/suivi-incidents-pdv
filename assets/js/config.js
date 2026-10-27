@@ -5,7 +5,7 @@
 window.APP_CONFIG = {
   // URL de l'application Web Google Apps Script (voir README, « Mise en service »).
   // Tant qu'elle est vide, l'écran de connexion indique que l'application n'est pas reliée à sa base.
-  API_URL: 'https://script.google.com/macros/s/AKfycbz71t6UUK_dP6mk1UZGeUAM3WUuuI-S6aVo47tF-z_3wSYu3P_DwHQiHwl_pTuyPRZl/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbzfC5lv5HxINLt8IhV5NASqukF4N2GT3CVKmQtsOgdv6zbuXxU1kzApJjsO2Jt1baVH/exec',
 
   APP_TITRE: 'Suivi des Incidents de Paiement',
   APP_SOUS_TITRE: 'Points de vente — Dépôts, retraits Mobile Money & paiements de formalités',
