@@ -246,6 +246,12 @@ function creer_(sess, data) {
   const inc = valider_(data);
   return verrou_(function () {
     const db = base_();
+    // Une liquidation correspond à un seul paiement : contrôle sur tous les points de vente.
+    if (inc.num_liquidation) {
+      const cle = cleLiquidation_(inc.num_liquidation);
+      const deja = lire_(db.incidents, COLS_INCIDENTS).find(function (i) { return i.num_liquidation && cleLiquidation_(i.num_liquidation) === cle; });
+      if (deja) throw erreur_('DOUBLON_LIQUIDATION', 'Le n° de liquidation ' + inc.num_liquidation + ' a déjà été déclaré (' + deja.id + ', ' + deja.pdv + ').');
+    }
     const now = new Date().toISOString();
     inc.id = prochainId_(db.incidents);
     inc.cree_le = now;
@@ -452,6 +458,10 @@ function verrou_(fn) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function cleLiquidation_(v) {
+  return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 function texte_(v, max) {

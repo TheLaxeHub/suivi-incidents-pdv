@@ -1806,6 +1806,7 @@
   }
 
   const SOLUTION_PAR_DEFAUT = 'À définir par le Back Office';
+  const cleLiquidation = function (v) { return sansAccents(v).replace(/[^a-z0-9]/g, ''); };
   function natureChoisie() { return ($('#fNew [name=nature]:checked') || {}).value || ''; }
   const valeurRadio = function (nom) { return ($('#fNew [name=' + nom + ']:checked') || {}).value || ''; };
 
@@ -1842,6 +1843,12 @@
       if (d.categorie === 'FORMALITE') {
         exiger(d.incident, $('#nIncident'), "l'incident survenu");
         exiger(d.num_liquidation, f.num_liquidation, 'le n° de liquidation');
+        // Une liquidation correspond à un seul paiement : jamais deux déclarations pour le même n°.
+        const deja = d.num_liquidation && S.incidents.find(function (i) { return i.num_liquidation && cleLiquidation(i.num_liquidation) === cleLiquidation(d.num_liquidation); });
+        if (deja) {
+          f.num_liquidation.classList.add('err');
+          return ['un autre n° de liquidation (le n° ' + d.num_liquidation + ' a déjà été déclaré : ' + deja.id + ')'];
+        }
         exiger(d.formalite, f.formalite, 'la formalité voulue');
       } else {
         exiger(d.operateur, $('#nOps'), 'le moyen de paiement');
