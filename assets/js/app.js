@@ -2017,6 +2017,7 @@
 
   // Ticket récapitulatif affiché en direct à côté de l'assistant.
   function majTicket() {
+    if (!$('#nLive')) return;
     const d = donneesDeclaration();
     const n = NATURES[natureChoisie()];
     const op = d.operateur ? operateur(d.operateur) : null;
