@@ -1057,3 +1057,5 @@ button.kc.on{border-color:var(--kc);box-shadow:0 0 0 3px color-mix(in srgb,var(-
 .liq-in em{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-style:normal;font-size:11px;color:var(--faint);pointer-events:none}
 .liq-in .in:placeholder-shown{padding-right:96px}
 .liq-in .in:not(:placeholder-shown)+em{display:none}
+
+.lanes{grid-template-columns:repeat(3,1fr)}

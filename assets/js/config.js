@@ -57,7 +57,6 @@ window.APP_CONFIG = {
     { code: 'CREATION_CA', libelle: 'Création de CA', statut: 'EN_COURS' },
     { code: 'DEMANDE_REGULARISATION', libelle: 'Demande de régularisation', statut: 'EN_COURS' },
     { code: 'RELANCE', libelle: 'Relance opérateur', statut: 'EN_COURS' },
-    { code: 'INFO_PDV', libelle: "Demande d'information au PDV", statut: 'EN_COURS' },
     { code: 'COMMENTAIRE', libelle: 'Commentaire', statut: null },
     { code: 'TERMINE', libelle: 'Terminée (résolue)', statut: 'TERMINE' },
   ],

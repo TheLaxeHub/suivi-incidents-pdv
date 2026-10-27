@@ -30,17 +30,17 @@ Le site est un tableau de bord statique (HTML/CSS/JS, Chart.js, SheetJS, icônes
 Pour ajouter ou retirer un agent : modifiez `BO_UTILISATEURS` **à la fois** dans `assets/js/config.js` (affichage) et dans `apps-script/Code.gs` (autorisation, côté serveur), puis redéployez le script. Un agent retiré du script perd l'accès immédiatement.
 
 ### Point de vente
-- **Accueil** : trois boutons *Dépôt / Retrait / Formalité* pour déclarer en un clic, les incidents pour lesquels **le Back Office attend une réponse**, les indicateurs du PDV et les dernières nouvelles (non lues signalées).
+- **Accueil** : un bouton **« Déclarer un incident »**, les indicateurs du PDV et les dernières nouvelles (non lues signalées).
 - **Déclarer un incident** — assistant en 4 étapes, sans défilement, avec les étapes à gauche et un **ticket récapitulatif mis à jour en direct** :
   - *Dépôt / Retrait* : opérateur, montant (saisi avec séparateurs), date de l'opération (raccourcis « Aujourd'hui », « Hier », « Avant-hier »), n° du client, référence de la transaction.
   - *Paiement de formalité* : incident survenu (paiement en attente / non confirmé, montant débité erroné, double débit), n° de liquidation (format **LIQ-** suivi de 15 chiffres au maximum ; **une seule déclaration par liquidation**, tous points de vente confondus), formalité voulue, moyen de paiement (obligatoire), montant, date.
   - Explication (phrases types proposées), puis vérification avec **alerte de doublon** si un incident proche existe déjà. Un brouillon est conservé si l'assistant est fermé.
-- **Mes déclarations** : en cours / clôturés, recherche, suivi en 4 étapes (Déclaré → Pris en charge → En traitement → Résolu), réponse au Back Office depuis le détail.
+- **Mes déclarations** : en cours / clôturés, recherche, suivi en 4 étapes (Déclaré → Pris en charge → En traitement → Résolu). Le point de vente suit le traitement ; il n'échange pas de message avec le Back Office.
 - **Statistiques** du PDV.
 
 ### Back Office
-- **File de traitement** : À prendre en charge (du plus ancien au plus récent, retards > 48 h signalés) · En traitement (réponses des PDV en tête) · En attente du PDV · Clôturés sur 7 jours. Bouton **« Prendre en charge »** directement depuis la liste.
-- **Détail d'un incident** (fenêtre en deux colonnes sans défilement : dossier à gauche, historique et saisie d'action à droite) : étape suivante proposée selon l'état, **prise en charge obligatoire en premier** (un clic, sans commentaire), puis actions de suivi avec commentaire (Création de CA **avec N° du CA obligatoire**, Demande de régularisation **avec objet et date d'envoi du mail à Alima obligatoires** · Relance opérateur · Demande d'information au PDV · Commentaire · Terminée). Un incident n'est jamais rejeté : il se termine toujours par « Résolu », navigation vers l'incident suivant (touches J / K).
+- **File de traitement** : À prendre en charge (du plus ancien au plus récent, retards > 48 h signalés) · En traitement · Clôturés sur 7 jours. Bouton **« Prendre en charge »** directement depuis la liste.
+- **Détail d'un incident** (fenêtre en deux colonnes sans défilement : dossier à gauche, historique et saisie d'action à droite) : étape suivante proposée selon l'état, **prise en charge obligatoire en premier** (un clic, sans commentaire), puis actions de suivi avec commentaire (Création de CA **avec N° du CA obligatoire**, Demande de régularisation **avec objet et date d'envoi du mail à Alima obligatoires** · Relance opérateur · Commentaire · Terminée). Un incident n'est jamais rejeté : il se termine toujours par « Résolu », navigation vers l'incident suivant (touches J / K).
 - **Pilotage** : indicateurs comparés à la période précédente, répartition par état, évolution, montants par nature, par opérateur, points de vente les plus concernés.
 - **Registre** complet, triable et filtrable, et **Synthèse par PDV** avec indicateur de santé.
 

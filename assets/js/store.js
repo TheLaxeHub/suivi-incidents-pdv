@@ -118,10 +118,8 @@
       const ref = suite === 'DEMANDE_REGULARISATION' ? 'Régularisation ' + inc.id + ' – ' + pdv : suite === 'CREATION_CA' ? 'CA-' + Math.floor(hasard() * 1e5) : '';
       const act = ajouterAction(inc, suite, BO, agent, t(10 + hasard() * 10), 'Dossier transmis à l\'opérateur.', ref);
       if (suite === 'DEMANDE_REGULARISATION') act.date_envoi = act.cree_le.slice(0, 10);
-      if (r < .42) { ajouterAction(inc, 'INFO_PDV', BO, agent, t(22), 'Merci de nous transmettre la capture du reçu client.'); continue; }
       if (r < .5) {
-        ajouterAction(inc, 'INFO_PDV', BO, agent, t(22), 'Pouvez-vous confirmer le numéro du client ?');
-        ajouterAction(inc, 'COMPLEMENT', pdv, pdv, t(26), 'Numéro confirmé, capture envoyée par mail.');
+        ajouterAction(inc, 'RELANCE', BO, agent, t(22), 'Relance envoyée à l\'opérateur.');
         continue;
       }
       if (ageH < 30) continue;

@@ -48,12 +48,11 @@ const ACTIONS = {
   CREATION_CA: { libelle: 'Création de CA', statut: 'EN_COURS', bo: true },
   DEMANDE_REGULARISATION: { libelle: 'Demande de régularisation', statut: 'EN_COURS', bo: true },
   RELANCE: { libelle: 'Relance opérateur', statut: 'EN_COURS', bo: true },
-  INFO_PDV: { libelle: "Demande d'information au PDV", statut: 'EN_COURS', bo: true },
   COMMENTAIRE: { libelle: 'Commentaire', statut: null, bo: true },
   TERMINE: { libelle: 'Terminée (résolue)', statut: 'TERMINE', bo: true },
-  COMPLEMENT: { libelle: "Complément d'information du PDV", statut: null, bo: false },
 };
-const COMMENTAIRE_OBLIGATOIRE = ['COMMENTAIRE', 'COMPLEMENT', 'INFO_PDV'];
+// Plus d'échange d'information entre le Back Office et les PDV : seul le Back Office agit sur un incident.
+const COMMENTAIRE_OBLIGATOIRE = ['COMMENTAIRE'];
 
 const COLS_INCIDENTS = [
   'id', 'cree_le', 'pdv', 'declarant', 'categorie', 'type_operation', 'operateur',

@@ -12,7 +12,7 @@
   const Store = window.Store;
   const BO = C.BACK_OFFICE;
 
-  // État affiché : « ATTENTE » est un « EN_COURS » dont la dernière action est une demande d'information au PDV.
+  // « ATTENTE » (demande d'information au PDV) n'existe plus : conservé pour les anciennes données et les statistiques.
   const ETATS = {
     NOUVEAU: { libelle: 'Nouveau', pluriel: 'Nouveaux', var: '--new' },
     EN_COURS: { libelle: 'En traitement', pluriel: 'En traitement', var: '--prog' },
@@ -142,7 +142,9 @@
       .sort(function (a, b) { return String(a.cree_le).localeCompare(String(b.cree_le)); });
   };
   const estOuvert = function (i) { return i.statut === 'NOUVEAU' || i.statut === 'EN_COURS'; };
-  const etat = function (i) { return i.statut === 'EN_COURS' && S.meta[i.id] && S.meta[i.id].attente ? 'ATTENTE' : i.statut; };
+  const etat = function (i) { return i.statut; };
+  // États montrés dans les filtres et légendes : plus d'« attente PDV », et « rejeté » seulement s'il reste d'anciens rejets.
+  const etatAffiche = function (e) { return e !== 'ATTENTE' && (e !== 'REJETE' || S.incidents.some(function (i) { return i.statut === 'REJETE'; })); };
   const cssVar = function (v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim() || '#888'; };
   const ico = function (nom, cls) { return '<i data-lucide="' + nom + '"' + (cls ? ' class="' + cls + '"' : '') + '></i>'; };
   function icones() { if (window.lucide) window.lucide.createIcons(); }
@@ -1123,7 +1125,6 @@
     const lanes = {
       NOUVEAU: base.filter(function (i) { return i.statut === 'NOUVEAU'; }),
       EN_COURS: base.filter(function (i) { return etat(i) === 'EN_COURS'; }),
-      ATTENTE: base.filter(function (i) { return etat(i) === 'ATTENTE'; }),
       CLOS: base.filter(function (i) { return !estOuvert(i) && date(i.cloture_le || i.maj_le) >= il7; }),
     };
     if (!f.lane) f.lane = lanes.NOUVEAU.length ? 'NOUVEAU' : 'EN_COURS';
@@ -1135,7 +1136,6 @@
     const defs = [
       { k: 'NOUVEAU', t: 'À prendre en charge', ico: 'inbox', c: '--new', s: retard ? '<b>' + retard + ' en retard</b> (&gt; ' + C.SEUIL_ALERTE_HEURES + ' h)' : nombre(montant(lanes.NOUVEAU)) + ' FCFA' },
       { k: 'EN_COURS', t: 'En traitement', ico: 'loader', c: '--prog', s: reponses ? reponses + ' réponse(s) du PDV à lire' : nombre(montant(lanes.EN_COURS)) + ' FCFA' },
-      { k: 'ATTENTE', t: 'En attente du PDV', ico: 'message-circle-question', c: '--wait', s: 'information demandée' },
       { k: 'CLOS', t: 'Clôturés (7 j)', ico: 'circle-check', c: '--done', s: lanes.CLOS.filter(function (i) { return i.statut === 'TERMINE'; }).length + ' résolus' + (rejetes ? ' · ' + rejetes + ' rejetés' : '') },
     ];
     const tris = {
@@ -1154,9 +1154,8 @@
     const lane = defs.find(function (d) { return d.k === f.lane; });
     const aides = {
       NOUVEAU: 'Du plus ancien au plus récent : traitez en priorité ceux qui attendent depuis longtemps.',
-      EN_COURS: 'Incidents pris en charge. Les réponses des points de vente apparaissent en premier.',
-      ATTENTE: 'Le point de vente doit fournir une information pour que le traitement continue.',
-      CLOS: 'Incidents résolus ou rejetés ces 7 derniers jours.',
+      EN_COURS: 'Incidents pris en charge, en cours de traitement.',
+      CLOS: 'Incidents résolus ces 7 derniers jours.',
     };
 
     return '<section class="lanes">' + defs.map(function (d) {
@@ -1183,7 +1182,7 @@
     const avant = bp ? stats(dansPeriode(S.incidents, bp, pdv)) : null;
     const st = stats(items);
     const ouvertsTous = stats(S.incidents.filter(function (i) { return !pdv || i.pdv === pdv; }));
-    const segs = ['TERMINE', 'REJETE', 'EN_COURS', 'ATTENTE', 'NOUVEAU'];
+    const segs = ['TERMINE', 'REJETE', 'EN_COURS', 'NOUVEAU'].filter(etatAffiche);
     S.pilotage = { items: items };
 
     return '<div class="pilot-h"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' + segPeriode() + (estBO() ? selectPdv('per.pdv', S.per.pdv) : '') + '</div>' +
@@ -1218,7 +1217,7 @@
     const rangs = Object.keys(par).map(function (p) { return { p: p, st: stats(par[p]) }; }).sort(function (a, b) { return b.st.n - a.st.n; }).slice(0, 8);
     if (!rangs.length) return '<div class="empty">Aucun incident sur la période.</div>';
     const max = rangs[0].st.n;
-    const segs = ['TERMINE', 'REJETE', 'EN_COURS', 'ATTENTE', 'NOUVEAU'];
+    const segs = ['TERMINE', 'REJETE', 'EN_COURS', 'NOUVEAU'].filter(etatAffiche);
     return '<div class="rank">' + rangs.map(function (r) {
       return '<button type="button" class="rank-r" data-act="voir-pdv" data-v="' + esc(r.p) + '"><b>' + esc(r.p) + '</b>' +
         '<span class="pbt" style="width:' + Math.max(8, (r.st.n / max) * 100) + '%">' + segs.map(function (k) {
@@ -1305,7 +1304,7 @@
     });
 
     // Par opérateur
-    const etatsOp = ['NOUVEAU', 'EN_COURS', 'ATTENTE', 'TERMINE', 'REJETE'];
+    const etatsOp = ['NOUVEAU', 'EN_COURS', 'TERMINE', 'REJETE'].filter(etatAffiche);
     const ops = C.OPERATEURS.filter(function (o) { return liste.some(function (i) { return i.operateur === o.code; }); });
     nouv('cOp', {
       type: 'bar',
@@ -1348,7 +1347,7 @@
       return '<th class="sort ' + (cls || '') + '" data-act="tri" data-v="' + k + '">' + l + (on ? '<span class="ar">' + (f.sens > 0 ? '↑' : '↓') + '</span>' : '') + '</th>';
     };
     const etats = '<select class="in in-sm" id="sel-reg-etat" data-f="reg.etat" aria-label="État"><option value="">Tous états</option>' +
-      ORDRE.map(function (e) { return '<option value="' + e + '"' + (f.etat === e ? ' selected' : '') + '>' + ETATS[e].pluriel + '</option>'; }).join('') + '</select>';
+      ORDRE.filter(etatAffiche).map(function (e) { return '<option value="' + e + '"' + (f.etat === e ? ' selected' : '') + '>' + ETATS[e].pluriel + '</option>'; }).join('') + '</select>';
     const visibles = lignes.slice(0, f.limite);
     const total = lignes.reduce(function (s, i) { return s + (Number(i.montant) || 0); }, 0);
 
@@ -1394,7 +1393,7 @@
       return '<span class="health h-ok">Bon</span>';
     };
     const actifs = lignes.filter(function (x) { return x.st.n || x.ouverts; }).length;
-    const segs = ['TERMINE', 'REJETE', 'EN_COURS', 'ATTENTE', 'NOUVEAU'];
+    const segs = ['TERMINE', 'REJETE', 'EN_COURS', 'NOUVEAU'].filter(etatAffiche);
 
     return '<div class="pilot-h">' + segPeriode() + '<span class="sh-r">' + actifs + ' PDV concernés ' + libellePeriode() + ' · cliquez sur une ligne pour voir ses incidents</span></div>' +
       '<div class="card"><div class="tw"><table class="tbl"><thead><tr>' +
@@ -1542,22 +1541,12 @@
         return boite('hl-new', 'hand', 'À prendre en charge', 'Déclaré ' + ilya(i.cree_le) + '. Prenez-le en charge pour informer le point de vente que le traitement a commencé : les autres actions (demande d\'information, CA, relance…) seront alors disponibles.',
           '<button type="button" class="btn bp" data-pec>' + ico('hand') + 'Prendre en charge</button>');
       }
-      if (e === 'ATTENTE') {
-        return boite('hl', 'hourglass', 'En attente du point de vente', 'Information demandée ' + ilya(m.question.cree_le) + (m.question.commentaire ? ' : « ' + esc(m.question.commentaire) + ' »' : '') + '. Vous pouvez relancer ou continuer le traitement.',
-          '<button type="button" class="btn bo btn-sm" data-pick="COMMENTAIRE">' + ico('message-square') + 'Ajouter un commentaire</button><button type="button" class="btn b-ok btn-sm" data-pick="TERMINE">' + ico('circle-check') + 'Marquer résolu</button>');
-      }
       if (e === 'EN_COURS') {
-        return boite(m.reponse ? 'hl' : '', m.reponse ? 'reply' : 'loader', m.reponse ? 'Le point de vente a répondu' : 'Traitement en cours',
-          m.reponse ? 'Lisez sa réponse dans l\'historique, puis poursuivez le traitement.' : 'Dernière action : ' + esc(m.derniere ? m.derniere.libelle : '') + ' ' + ilya(i.maj_le) + '.',
+        return boite('', 'loader', 'Traitement en cours', 'Dernière action : ' + esc(m.derniere ? m.derniere.libelle : '') + ' ' + ilya(i.maj_le) + '.',
           '<button type="button" class="btn bo btn-sm" data-pick="CREATION_CA">' + ico('file-plus-2') + 'Créer un CA</button><button type="button" class="btn bo btn-sm" data-pick="RELANCE">' + ico('phone-outgoing') + 'Relancer</button><button type="button" class="btn b-ok btn-sm" data-pick="TERMINE">' + ico('circle-check') + 'Marquer résolu</button>');
       }
       return boite('', i.statut === 'TERMINE' ? 'circle-check' : 'circle-x', i.statut === 'TERMINE' ? 'Incident résolu' : 'Incident rejeté',
         'Clôturé le ' + fDateHeure(i.cloture_le) + (i.cloture_le ? ', ' + duree((date(i.cloture_le) - date(i.cree_le)) / 36e5) + ' après la déclaration.' : '.'), '');
-    }
-    if (e === 'ATTENTE') {
-      return boite('hl', 'message-circle-question', 'Le Back Office a besoin d\'une information',
-        m.question && m.question.commentaire ? '« ' + esc(m.question.commentaire) + ' »' : 'Répondez ci-dessous pour que le traitement continue.',
-        '<button type="button" class="btn bp btn-sm" data-focus="1">' + ico('reply') + 'Répondre maintenant</button>');
     }
     if (e === 'NOUVEAU') return boite('', 'hourglass', 'Transmis au Back Office', 'Votre déclaration a été reçue ' + ilya(i.cree_le) + '. Elle sera prise en charge sous peu.', '');
     if (e === 'EN_COURS') return boite('', 'loader', 'Le Back Office traite votre incident', 'Dernière action : ' + esc(m.derniere ? m.derniere.libelle : '') + ' ' + ilya(i.maj_le) + '. Rien à faire de votre côté pour l\'instant.', '');
@@ -1591,25 +1580,19 @@
         '<span class="grow"></span><button class="btn bp" type="submit" id="aGo">' + ico('check') + 'Enregistrer</button></div>' +
         '</form></div>';
     }
-    const attente = etat(i) === 'ATTENTE';
-    return '<div class="ps" id="cmpWrap"><div class="pst">' + ico('reply') + (attente ? 'Votre réponse au Back Office' : 'Écrire au Back Office') + '</div><form class="cmp" id="fAct" novalidate>' +
-      '<input type="hidden" name="code" value="COMPLEMENT">' +
-      '<textarea class="in" id="aCom" name="commentaire" rows="3" placeholder="' + (attente ? 'Votre réponse…' : 'Une nouvelle information, une précision…') + '"></textarea>' +
-      '<div class="msg err" id="aErr" hidden></div>' +
-      '<div class="cmp-ft"><span class="grow"></span><button class="btn bp" type="submit" id="aGo">' + ico('send') + 'Envoyer</button></div></form></div>';
+    return '';
   }
 
   const LIBELLES_ENVOI = {
     PRISE_EN_CHARGE: 'Prendre en charge', TERMINE: 'Clôturer comme résolu', REJETE: "Rejeter l'incident",
-    INFO_PDV: 'Envoyer la demande au PDV', COMMENTAIRE: 'Ajouter le commentaire',
+    COMMENTAIRE: 'Ajouter le commentaire',
   };
   const AIDES_COMMENTAIRE = {
-    INFO_PDV: ['Question au point de vente *', 'Quelle information vous manque ? (capture du reçu, n° du client…)'],
     REJETE: ['Motif du rejet *', 'Pourquoi la demande est-elle non fondée ?'],
     TERMINE: ['Comment l\'incident a été résolu', 'Ex. : client remboursé le…, régularisation faite par l\'opérateur…'],
     COMMENTAIRE: ['Commentaire *', 'Note interne ou information pour le point de vente…'],
   };
-  const COMMENTAIRE_REQUIS = ['INFO_PDV', 'REJETE', 'COMMENTAIRE'];
+  const COMMENTAIRE_REQUIS = ['COMMENTAIRE'];
 
   function lierFormulaire(brouillon) {
     const f = $('#fAct');
